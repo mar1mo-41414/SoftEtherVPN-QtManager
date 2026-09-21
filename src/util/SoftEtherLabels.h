@@ -91,6 +91,24 @@ inline QString sessionLocation(bool linkMode, bool secureNatMode, bool bridgeMod
     return QCoreApplication::translate("SoftEtherLabels", "ローカルセッション");
 }
 
+inline QString protocolName(int protocol)
+{
+    switch (protocol) {
+    case 0:
+        return QCoreApplication::translate("SoftEtherLabels", "すべてのプロトコル");
+    case 1:
+        return QCoreApplication::translate("SoftEtherLabels", "ICMP");
+    case 6:
+        return QCoreApplication::translate("SoftEtherLabels", "TCP");
+    case 17:
+        return QCoreApplication::translate("SoftEtherLabels", "UDP");
+    case 58:
+        return QCoreApplication::translate("SoftEtherLabels", "ICMPv6");
+    default:
+        return QString::number(protocol);
+    }
+}
+
 inline QString macIpLocation(bool remoteItem, const QString &remoteHostname)
 {
     // SM_MACIP_LOCAL / SM_MACIP_SERVER

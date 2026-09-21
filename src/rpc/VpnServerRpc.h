@@ -72,6 +72,32 @@ public:
     void deleteIpTable(const QString &hubName, quint32 key, const JsonRpcClient::ResultCallback &onResult,
                         const JsonRpcClient::ErrorCallback &onError);
 
+    void enumAccess(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                     const JsonRpcClient::ErrorCallback &onError);
+    void addAccess(const QString &hubName, const QJsonObject &accessItem, const JsonRpcClient::ResultCallback &onResult,
+                    const JsonRpcClient::ErrorCallback &onError);
+    void deleteAccess(const QString &hubName, quint32 id, const JsonRpcClient::ResultCallback &onResult,
+                       const JsonRpcClient::ErrorCallback &onError);
+
+    void enumLink(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                  const JsonRpcClient::ErrorCallback &onError);
+    void createLink(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                     const JsonRpcClient::ErrorCallback &onError);
+    void setLink(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                 const JsonRpcClient::ErrorCallback &onError);
+    void getLink(const QString &hubName, const QString &accountName, const JsonRpcClient::ResultCallback &onResult,
+                 const JsonRpcClient::ErrorCallback &onError);
+    void deleteLink(const QString &hubName, const QString &accountName, const JsonRpcClient::ResultCallback &onResult,
+                     const JsonRpcClient::ErrorCallback &onError);
+    void renameLink(const QString &hubName, const QString &oldAccountName, const QString &newAccountName,
+                     const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void setLinkOnline(const QString &hubName, const QString &accountName, const JsonRpcClient::ResultCallback &onResult,
+                        const JsonRpcClient::ErrorCallback &onError);
+    void setLinkOffline(const QString &hubName, const QString &accountName, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError);
+    void getLinkStatus(const QString &hubName, const QString &accountName, const JsonRpcClient::ResultCallback &onResult,
+                        const JsonRpcClient::ErrorCallback &onError);
+
 private:
     JsonRpcClient m_client;
 };

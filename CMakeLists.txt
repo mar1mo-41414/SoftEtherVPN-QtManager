@@ -51,6 +51,16 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/MacTableDialog.cpp
     src/ui/IpTableDialog.h
     src/ui/IpTableDialog.cpp
+    src/ui/AccessEditDialog.h
+    src/ui/AccessEditDialog.cpp
+    src/ui/AccessListDialog.h
+    src/ui/AccessListDialog.cpp
+    src/ui/CascadeLinkEditDialog.h
+    src/ui/CascadeLinkEditDialog.cpp
+    src/ui/CascadeLinkStatusDialog.h
+    src/ui/CascadeLinkStatusDialog.cpp
+    src/ui/CascadeLinkListDialog.h
+    src/ui/CascadeLinkListDialog.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
 )

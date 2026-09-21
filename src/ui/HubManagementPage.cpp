@@ -1,4 +1,6 @@
 #include "HubManagementPage.h"
+#include "AccessListDialog.h"
+#include "CascadeLinkListDialog.h"
 #include "GroupListDialog.h"
 #include "HubEditDialog.h"
 #include "SessionListDialog.h"
@@ -26,10 +28,9 @@ HubManagementPage::HubManagementPage(QWidget *parent)
     auto *userButton = new QPushButton(tr("ユーザーの管理(&U)"), this);
     auto *groupButton = new QPushButton(tr("グループの管理(&G)"), this);
     auto *accessButton = new QPushButton(tr("アクセスリストの管理(&A)"), this);
-    accessButton->setEnabled(false);
-    accessButton->setToolTip(tr("未実装 (今後のフェーズで対応予定)"));
     connect(userButton, &QPushButton::clicked, this, &HubManagementPage::onManageUsers);
     connect(groupButton, &QPushButton::clicked, this, &HubManagementPage::onManageGroups);
+    connect(accessButton, &QPushButton::clicked, this, &HubManagementPage::onManageAccessList);
 
     auto *securityGroup = new QGroupBox(tr("セキュリティデータベースの管理"), this);
     auto *securityLayout = new QHBoxLayout(securityGroup);
@@ -43,9 +44,8 @@ HubManagementPage::HubManagementPage(QWidget *parent)
     radiusButton->setEnabled(false);
     radiusButton->setToolTip(tr("未実装 (今後のフェーズで対応予定)"));
     auto *linkButton = new QPushButton(tr("カスケード接続の管理(&C)"), this);
-    linkButton->setEnabled(false);
-    linkButton->setToolTip(tr("未実装 (今後のフェーズで対応予定)"));
     connect(propertyButton, &QPushButton::clicked, this, &HubManagementPage::onEditProperty);
+    connect(linkButton, &QPushButton::clicked, this, &HubManagementPage::onManageCascadeLinks);
 
     auto *settingGroup = new QGroupBox(tr("仮想 HUB 設定"), this);
     auto *settingLayout = new QHBoxLayout(settingGroup);
@@ -116,6 +116,18 @@ void HubManagementPage::onManageGroups()
 void HubManagementPage::onManageSessions()
 {
     SessionListDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
+}
+
+void HubManagementPage::onManageAccessList()
+{
+    AccessListDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
+}
+
+void HubManagementPage::onManageCascadeLinks()
+{
+    CascadeLinkListDialog dialog(m_rpc, m_hubName, this);
     dialog.exec();
 }
 

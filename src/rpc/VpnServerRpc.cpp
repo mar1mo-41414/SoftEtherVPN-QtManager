@@ -1,5 +1,7 @@
 #include "VpnServerRpc.h"
 
+#include <QJsonArray>
+
 VpnServerRpc::VpnServerRpc(QObject *parent)
     : QObject(parent)
 {
@@ -213,4 +215,107 @@ void VpnServerRpc::deleteIpTable(const QString &hubName, quint32 key, const Json
     params["HubName_str"] = hubName;
     params["Key_u32"] = static_cast<qint64>(key);
     m_client.call(QStringLiteral("DeleteIpTable"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumAccess(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                               const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumAccess"), params, onResult, onError);
+}
+
+void VpnServerRpc::addAccess(const QString &hubName, const QJsonObject &accessItem,
+                              const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["AccessListSingle"] = QJsonArray{accessItem};
+    m_client.call(QStringLiteral("AddAccess"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteAccess(const QString &hubName, quint32 id, const JsonRpcClient::ResultCallback &onResult,
+                                 const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Id_u32"] = static_cast<qint64>(id);
+    m_client.call(QStringLiteral("DeleteAccess"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumLink(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                             const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumLink"), params, onResult, onError);
+}
+
+void VpnServerRpc::createLink(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                               const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("CreateLink"), params, onResult, onError);
+}
+
+void VpnServerRpc::setLink(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                            const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("SetLink"), params, onResult, onError);
+}
+
+void VpnServerRpc::getLink(const QString &hubName, const QString &accountName,
+                            const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_Ex_str"] = hubName;
+    params["AccountName_utf"] = accountName;
+    m_client.call(QStringLiteral("GetLink"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteLink(const QString &hubName, const QString &accountName,
+                               const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["AccountName_utf"] = accountName;
+    m_client.call(QStringLiteral("DeleteLink"), params, onResult, onError);
+}
+
+void VpnServerRpc::renameLink(const QString &hubName, const QString &oldAccountName, const QString &newAccountName,
+                               const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["OldAccountName_utf"] = oldAccountName;
+    params["NewAccountName_utf"] = newAccountName;
+    m_client.call(QStringLiteral("RenameLink"), params, onResult, onError);
+}
+
+void VpnServerRpc::setLinkOnline(const QString &hubName, const QString &accountName,
+                                  const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["AccountName_utf"] = accountName;
+    m_client.call(QStringLiteral("SetLinkOnline"), params, onResult, onError);
+}
+
+void VpnServerRpc::setLinkOffline(const QString &hubName, const QString &accountName,
+                                   const JsonRpcClient::ResultCallback &onResult,
+                                   const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["AccountName_utf"] = accountName;
+    m_client.call(QStringLiteral("SetLinkOffline"), params, onResult, onError);
+}
+
+void VpnServerRpc::getLinkStatus(const QString &hubName, const QString &accountName,
+                                  const JsonRpcClient::ResultCallback &onResult,
+                                  const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_Ex_str"] = hubName;
+    params["AccountName_utf"] = accountName;
+    m_client.call(QStringLiteral("GetLinkStatus"), params, onResult, onError);
 }

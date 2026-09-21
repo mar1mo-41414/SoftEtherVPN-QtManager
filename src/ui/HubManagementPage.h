@@ -7,9 +7,10 @@
 class QLabel;
 class QPushButton;
 
-// 公式Manager「仮想HUBの管理」(D_SM_HUB) 相当。ユーザー/グループ/セッション管理への入口。
-// アクセスリスト・認証サーバー・カスケード接続・ログ・証明書・SecureNATは
-// 後続フェーズで有効化する (ボタンは配置済みだが無効状態)。
+// 公式Manager「仮想HUBの管理」(D_SM_HUB) 相当。ユーザー/グループ/セッション/
+// アクセスリスト/カスケード接続管理への入口。
+// 認証サーバー・ログ・証明書・SecureNATは後続フェーズで有効化する
+// (ボタンは配置済みだが無効状態)。
 class HubManagementPage : public QWidget
 {
     Q_OBJECT
@@ -27,6 +28,8 @@ private slots:
     void onManageUsers();
     void onManageGroups();
     void onManageSessions();
+    void onManageAccessList();
+    void onManageCascadeLinks();
     void onEditProperty();
 
 private:

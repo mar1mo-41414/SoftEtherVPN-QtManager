@@ -34,9 +34,15 @@
       から遷移、セッション単位でのMAC/IPテーブル絞り込み表示にも対応。実機でセッション
       一覧・情報表示・切断・MAC/IPテーブル表示/削除まで確認済み(2026-09-21)。転送バイト数は
       ポーリングタイミングの差でWindows版と完全一致はしないが正常範囲
-- [ ] **Phase 6: アクセスリスト・カスケード接続** — `AddAccess` / `DeleteAccess` /
-      `EnumAccess` / `SetAccessList`、`CreateLink` / `SetLink` / `GetLink` / `EnumLink` /
-      `SetLinkOnline` / `SetLinkOffline` / `DeleteLink` / `RenameLink` / `GetLinkStatus`
+- [x] **Phase 6: アクセスリスト・カスケード接続** — `AddAccess` / `DeleteAccess` /
+      `EnumAccess`、`CreateLink` / `SetLink` / `GetLink` / `EnumLink` /
+      `SetLinkOnline` / `SetLinkOffline` / `DeleteLink` / `RenameLink` / `GetLinkStatus`。
+      D_SM_ACCESS_LIST/D_SM_EDIT_ACCESS・D_SM_LINKの文言を再現。アクセスリストは
+      IPv4のみ対応(IPv6・MACヘッダフィルタ・TCP状態検査・リダイレクト・
+      遅延/パケットロスシミュレーションは未対応)、編集はDeleteAccess+AddAccessで実現。
+      カスケード接続は匿名/パスワード認証のみ対応(証明書認証・プロキシ経由・
+      セキュリティポリシーは未対応)。`SetAccessList`(一括置換)は未使用。
+      実機でアクセスリスト・カスケード接続とも一通り確認済み(2026-09-21)
 - [ ] **Phase 7: SecureNAT・ローカルブリッジ** — `EnableSecureNAT` / `DisableSecureNAT` /
       `SetSecureNATOption` / `GetSecureNATOption` / `EnumNAT` / `EnumDHCP`、
       `EnumEthernet` / `AddLocalBridge` / `DeleteLocalBridge` / `EnumLocalBridge`
@@ -52,4 +58,4 @@
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 5 完了・実機確認済み（nux2:5555）。次はPhase 6（アクセスリスト・カスケード接続）。
+Phase 6 完了・実機確認済み（nux2:5555）。次はPhase 7（SecureNAT・ローカルブリッジ）。
