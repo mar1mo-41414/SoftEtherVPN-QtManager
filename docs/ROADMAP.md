@@ -5,8 +5,9 @@
 [jsonrpc-api-reference.md](upstream-reference/jsonrpc-api-reference.md) 参照。
 
 - [x] **Phase 0: 土台** — CMake + Qt6 プロジェクト雛形、Git、ドキュメント構成
-- [ ] **Phase 1: 通信層** — 汎用JSON-RPC 2.0クライアント（自己署名証明書許容、認証ヘッダー、
-      エラーコード変換）。疎通確認用に `Test` / `GetServerInfo` / `GetServerStatus` を実装
+- [x] **Phase 1: 通信層** — 汎用JSON-RPC 2.0クライアント（自己署名証明書許容、認証ヘッダー、
+      エラーコード変換）。疎通確認用に `Test` / `GetServerInfo` / `GetServerStatus` を実装。
+      実サーバー(nux2)への接続・`EnumHub`によるHUB一覧表示まで実機確認済み(2026-09-21)
 - [ ] **Phase 2: 接続管理** — 「新しい接続設定の作成」ダイアログ相当（接続設定の保存・一覧・
       編集・削除）、ログイン、メイン画面の骨格（サーバー全体管理 / 仮想HUB管理モードの分岐）
 - [ ] **Phase 3: 仮想HUB一覧・基本操作** — `EnumHub` / `CreateHub` / `SetHub` / `GetHub` /
@@ -35,4 +36,4 @@
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 0 完了。次はPhase 1（JSON-RPCクライアント）。
+Phase 1 完了・実機確認済み（nux2上のSoftEther VPN Server, Version 4.42 Build 9798）。次はPhase 2（接続設定の保存・一覧・編集・削除、メイン画面の骨格）。
