@@ -182,11 +182,12 @@ void ConnectionListPage::connectToProfile(const ConnectionProfile &profile)
     auto *rpc = new VpnServerRpc(this);
     rpc->connectToServer(profile.host, profile.port, profile.hubAdminMode ? profile.hubName : QString(), password);
 
+    const bool hubAdminMode = profile.hubAdminMode;
     rpc->test(
-        [this, rpc](const QJsonObject &) {
+        [this, rpc, hubAdminMode](const QJsonObject &) {
             rpc->getServerInfo(
-                [this, rpc](const QJsonObject &info) {
-                    emit connected(rpc, info);
+                [this, rpc, hubAdminMode](const QJsonObject &info) {
+                    emit connected(rpc, info, hubAdminMode);
                 },
                 [this, rpc](const RpcError &error) {
                     rpc->deleteLater();

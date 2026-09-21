@@ -20,12 +20,17 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/model/ConnectionProfile.h
     src/model/ConnectionProfileStore.h
     src/model/ConnectionProfileStore.cpp
+    src/util/SoftEtherLabels.h
     src/ui/ConnectionEditDialog.h
     src/ui/ConnectionEditDialog.cpp
     src/ui/PasswordPromptDialog.h
     src/ui/PasswordPromptDialog.cpp
     src/ui/ConnectionListPage.h
     src/ui/ConnectionListPage.cpp
+    src/ui/HubEditDialog.h
+    src/ui/HubEditDialog.cpp
+    src/ui/HubStatusDialog.h
+    src/ui/HubStatusDialog.cpp
     src/ui/HubListPage.h
     src/ui/HubListPage.cpp
     src/ui/MainWindow.h

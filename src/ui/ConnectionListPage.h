@@ -20,7 +20,7 @@ public:
 
 signals:
     // 接続に成功したら発行される。rpcの所有権は受け取り側(MainWindow)に移る。
-    void connected(VpnServerRpc *rpc, const QJsonObject &serverInfo);
+    void connected(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode);
 
 private slots:
     void onNewSetting();

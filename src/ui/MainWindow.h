@@ -19,7 +19,7 @@ public:
     ~MainWindow() override;
 
 private slots:
-    void onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo);
+    void onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode);
     void onDisconnectRequested();
 
 private:

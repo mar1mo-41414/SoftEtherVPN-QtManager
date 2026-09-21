@@ -1,4 +1,8 @@
 #include "HubListPage.h"
+#include "HubEditDialog.h"
+#include "HubStatusDialog.h"
+
+#include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
 #include <QHBoxLayout>
@@ -10,31 +14,6 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
-
-namespace {
-
-// SM_HUB_ONLINE / SM_HUB_OFFLINE (strtable_ja.stb)
-QString onlineStatusText(bool online)
-{
-    return online ? HubListPage::tr("オンライン") : HubListPage::tr("オフライン");
-}
-
-// SM_HUB_STANDALONE / SM_HUB_STATIC / SM_HUB_DYNAMIC (strtable_ja.stb)
-QString hubTypeText(int hubType)
-{
-    switch (hubType) {
-    case 0:
-        return HubListPage::tr("スタンドアロン");
-    case 1:
-        return HubListPage::tr("スタティック仮想 HUB");
-    case 2:
-        return HubListPage::tr("ダイナミック仮想 HUB");
-    default:
-        return HubListPage::tr("不明");
-    }
-}
-
-} // namespace
 
 HubListPage::HubListPage(QWidget *parent)
     : QWidget(parent)
@@ -56,33 +35,63 @@ HubListPage::HubListPage(QWidget *parent)
     m_hubTable->horizontalHeader()->setStretchLastSection(true);
     m_hubTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_hubTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_hubTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    connect(m_hubTable, &QTableWidget::itemSelectionChanged, this, &HubListPage::onSelectionChanged);
+    connect(m_hubTable, &QTableWidget::cellDoubleClicked, this, &HubListPage::onEditHub);
 
     m_serverInfoLabel = new QLabel(this);
 
-    // B_REFRESH / IDCANCEL (D_SM_SERVER)
+    // D_SM_SERVER: B_CREATE / B_EDIT / B_DELETE / B_ONLINE / B_OFFLINE / B_HUB_STATUS
+    m_createButton = new QPushButton(tr("仮想 HUB の作成(&C)"), this);
+    m_editButton = new QPushButton(tr("プロパティ(&E)"), this);
+    m_deleteButton = new QPushButton(tr("削除(&D)"), this);
+    m_onlineButton = new QPushButton(tr("オンライン(&O)"), this);
+    m_offlineButton = new QPushButton(tr("オフライン(&F)"), this);
+    m_statusButton = new QPushButton(tr("状態の表示(&S)"), this);
+    // B_REFRESH / IDCANCEL
     m_refreshButton = new QPushButton(tr("最新の状態に更新(&H)"), this);
     m_disconnectButton = new QPushButton(tr("閉じる(&X)"), this);
+
+    connect(m_createButton, &QPushButton::clicked, this, &HubListPage::onCreateHub);
+    connect(m_editButton, &QPushButton::clicked, this, &HubListPage::onEditHub);
+    connect(m_deleteButton, &QPushButton::clicked, this, &HubListPage::onDeleteHub);
+    connect(m_onlineButton, &QPushButton::clicked, this, &HubListPage::onSetOnline);
+    connect(m_offlineButton, &QPushButton::clicked, this, &HubListPage::onSetOffline);
+    connect(m_statusButton, &QPushButton::clicked, this, &HubListPage::onShowStatus);
     connect(m_refreshButton, &QPushButton::clicked, this, &HubListPage::refreshHubList);
     connect(m_disconnectButton, &QPushButton::clicked, this, &HubListPage::disconnectRequested);
 
     auto *buttonLayout = new QHBoxLayout;
-    buttonLayout->addWidget(m_refreshButton);
+    buttonLayout->addWidget(m_createButton);
+    buttonLayout->addWidget(m_editButton);
+    buttonLayout->addWidget(m_deleteButton);
+    buttonLayout->addWidget(m_onlineButton);
+    buttonLayout->addWidget(m_offlineButton);
+    buttonLayout->addWidget(m_statusButton);
     buttonLayout->addStretch();
+    buttonLayout->addWidget(m_refreshButton);
     buttonLayout->addWidget(m_disconnectButton);
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(m_serverInfoLabel);
     layout->addWidget(m_hubTable);
     layout->addLayout(buttonLayout);
+
+    setHubActionButtonsEnabled(false);
 }
 
-void HubListPage::setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo)
+void HubListPage::setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode)
 {
     if (m_rpc) {
         m_rpc->deleteLater();
     }
     m_rpc = rpc;
     m_rpc->setParent(this);
+    m_hubAdminMode = hubAdminMode;
+
+    // 仮想HUB管理モードでは仮想HUBの作成/削除にサーバー管理権限が必要なため操作させない。
+    m_createButton->setEnabled(!hubAdminMode);
+    m_deleteButton->setEnabled(false);
 
     applyServerInfo(serverInfo);
     refreshHubList();
@@ -94,6 +103,29 @@ void HubListPage::applyServerInfo(const QJsonObject &info)
     const QString version = info.value("ServerVersionString_str").toString();
     const QString hostName = info.value("ServerHostName_str").toString();
     m_serverInfoLabel->setText(tr("接続先: %1 (%2 %3)").arg(hostName, productName, version));
+}
+
+QString HubListPage::selectedHubName() const
+{
+    const QList<QTableWidgetItem *> selected = m_hubTable->selectedItems();
+    if (selected.isEmpty()) {
+        return QString();
+    }
+    return m_hubTable->item(selected.first()->row(), 0)->text();
+}
+
+void HubListPage::setHubActionButtonsEnabled(bool enabled)
+{
+    m_editButton->setEnabled(enabled);
+    m_deleteButton->setEnabled(enabled && !m_hubAdminMode);
+    m_onlineButton->setEnabled(enabled);
+    m_offlineButton->setEnabled(enabled);
+    m_statusButton->setEnabled(enabled);
+}
+
+void HubListPage::onSelectionChanged()
+{
+    setHubActionButtonsEnabled(!selectedHubName().isEmpty());
 }
 
 void HubListPage::refreshHubList()
@@ -111,8 +143,10 @@ void HubListPage::refreshHubList()
                 const QJsonObject hub = hubList.at(row).toObject();
 
                 m_hubTable->setItem(row, 0, new QTableWidgetItem(hub.value("HubName_str").toString()));
-                m_hubTable->setItem(row, 1, new QTableWidgetItem(onlineStatusText(hub.value("Online_bool").toBool())));
-                m_hubTable->setItem(row, 2, new QTableWidgetItem(hubTypeText(hub.value("HubType_u32").toInt())));
+                m_hubTable->setItem(row, 1,
+                                     new QTableWidgetItem(SoftEtherLabels::onlineStatus(hub.value("Online_bool").toBool())));
+                m_hubTable->setItem(row, 2,
+                                     new QTableWidgetItem(SoftEtherLabels::hubType(hub.value("HubType_u32").toInt())));
                 m_hubTable->setItem(row, 3, new QTableWidgetItem(QString::number(hub.value("NumUsers_u32").toInt())));
                 m_hubTable->setItem(row, 4, new QTableWidgetItem(QString::number(hub.value("NumGroups_u32").toInt())));
                 m_hubTable->setItem(row, 5, new QTableWidgetItem(QString::number(hub.value("NumSessions_u32").toInt())));
@@ -122,11 +156,137 @@ void HubListPage::refreshHubList()
             }
 
             m_hubTable->resizeColumnsToContents();
+            setHubActionButtonsEnabled(!selectedHubName().isEmpty());
         },
         [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("仮想 HUB 一覧の取得に失敗しました: %1 (code %2)")
                                       .arg(error.message)
                                       .arg(error.code));
+        });
+}
+
+void HubListPage::onCreateHub()
+{
+    HubEditDialog dialog(/*isNew=*/true, this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    m_rpc->createHub(
+        dialog.toRpcParams(), [this](const QJsonObject &) { refreshHubList(); },
+        [this](const RpcError &error) {
+            QMessageBox::warning(this, tr("エラー"),
+                                  tr("仮想 HUB の作成に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
+        });
+}
+
+void HubListPage::onEditHub()
+{
+    const QString hubName = selectedHubName();
+    if (hubName.isEmpty()) {
+        return;
+    }
+
+    m_rpc->getHub(
+        hubName,
+        [this](const QJsonObject &hub) {
+            auto *dialog = new HubEditDialog(/*isNew=*/false, this);
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            dialog->setValues(hub.value("HubName_str").toString(), hub.value("Online_bool").toBool(),
+                               hub.value("NoEnum_bool").toBool(),
+                               static_cast<quint32>(hub.value("MaxSession_u32").toDouble()));
+
+            connect(dialog, &QDialog::accepted, this, [this, dialog]() {
+                m_rpc->setHub(
+                    dialog->toRpcParams(), [this](const QJsonObject &) { refreshHubList(); },
+                    [this](const RpcError &error) {
+                        QMessageBox::warning(this, tr("エラー"),
+                                              tr("仮想 HUB の設定変更に失敗しました: %1 (code %2)")
+                                                  .arg(error.message)
+                                                  .arg(error.code));
+                    });
+            });
+            dialog->open();
+        },
+        [this](const RpcError &error) {
+            QMessageBox::warning(this, tr("エラー"),
+                                  tr("仮想 HUB の設定取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
+        });
+}
+
+void HubListPage::onDeleteHub()
+{
+    const QString hubName = selectedHubName();
+    if (hubName.isEmpty()) {
+        return;
+    }
+
+    QMessageBox confirmBox(QMessageBox::Warning, tr("確認"),
+                            tr("仮想 HUB \"%1\" を削除します。\n"
+                               "この仮想 HUB に属するユーザー・グループ・証明書・カスケード接続もすべて削除され、"
+                               "元に戻すことはできません。よろしいですか?")
+                                .arg(hubName),
+                            QMessageBox::NoButton, this);
+    QPushButton *yesButton = confirmBox.addButton(tr("はい"), QMessageBox::YesRole);
+    confirmBox.addButton(tr("いいえ"), QMessageBox::NoRole);
+    confirmBox.exec();
+    if (confirmBox.clickedButton() != yesButton) {
+        return;
+    }
+
+    m_rpc->deleteHub(
+        hubName, [this](const QJsonObject &) { refreshHubList(); },
+        [this](const RpcError &error) {
+            QMessageBox::warning(this, tr("エラー"),
+                                  tr("仮想 HUB の削除に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
+        });
+}
+
+void HubListPage::onSetOnline()
+{
+    const QString hubName = selectedHubName();
+    if (hubName.isEmpty()) {
+        return;
+    }
+    m_rpc->setHubOnline(
+        hubName, true, [this](const QJsonObject &) { refreshHubList(); },
+        [this](const RpcError &error) {
+            QMessageBox::warning(this, tr("エラー"),
+                                  tr("仮想 HUB のオンライン化に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
+        });
+}
+
+void HubListPage::onSetOffline()
+{
+    const QString hubName = selectedHubName();
+    if (hubName.isEmpty()) {
+        return;
+    }
+    m_rpc->setHubOnline(
+        hubName, false, [this](const QJsonObject &) { refreshHubList(); },
+        [this](const RpcError &error) {
+            QMessageBox::warning(this, tr("エラー"),
+                                  tr("仮想 HUB のオフライン化に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
+        });
+}
+
+void HubListPage::onShowStatus()
+{
+    const QString hubName = selectedHubName();
+    if (hubName.isEmpty()) {
+        return;
+    }
+
+    m_rpc->getHubStatus(
+        hubName,
+        [this, hubName](const QJsonObject &status) {
+            auto *dialog = new HubStatusDialog(hubName, status, this);
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            dialog->open();
+        },
+        [this](const RpcError &error) {
+            QMessageBox::warning(this, tr("エラー"),
+                                  tr("仮想 HUB の状態取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
 }

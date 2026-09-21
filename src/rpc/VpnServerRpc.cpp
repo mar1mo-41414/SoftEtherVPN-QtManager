@@ -31,3 +31,48 @@ void VpnServerRpc::enumHub(const JsonRpcClient::ResultCallback &onResult, const 
 {
     m_client.call(QStringLiteral("EnumHub"), {}, onResult, onError);
 }
+
+void VpnServerRpc::createHub(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                              const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("CreateHub"), params, onResult, onError);
+}
+
+void VpnServerRpc::setHub(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                           const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("SetHub"), params, onResult, onError);
+}
+
+void VpnServerRpc::getHub(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                           const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("GetHub"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteHub(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                              const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("DeleteHub"), params, onResult, onError);
+}
+
+void VpnServerRpc::setHubOnline(const QString &hubName, bool online, const JsonRpcClient::ResultCallback &onResult,
+                                 const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Online_bool"] = online;
+    m_client.call(QStringLiteral("SetHubOnline"), params, onResult, onError);
+}
+
+void VpnServerRpc::getHubStatus(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                 const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("GetHubStatus"), params, onResult, onError);
+}

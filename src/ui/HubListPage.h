@@ -9,8 +9,8 @@ class QTableWidget;
 class QLabel;
 class QPushButton;
 
-// Phase 3で本格的な仮想HUB管理画面 (D_SM_SERVER) に置き換えるまでの、
-// 接続直後に EnumHub を呼んで一覧表示するだけの最小画面。
+// D_SM_SERVER (仮想HUB一覧・基本操作) 相当の画面。
+// リスナー管理・証明書・クラスタリング等のサーバー全体設定は後続フェーズで追加する。
 class HubListPage : public QWidget
 {
     Q_OBJECT
@@ -18,18 +18,39 @@ class HubListPage : public QWidget
 public:
     explicit HubListPage(QWidget *parent = nullptr);
 
-    void setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo);
+    // hubAdminMode: 仮想HUB管理モードでの接続の場合、仮想HUBの作成/削除は
+    // サーバー管理権限が無いため操作対象外とし、ボタンを無効化する。
+    void setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode);
 
 signals:
     void disconnectRequested();
 
+private slots:
+    void onCreateHub();
+    void onEditHub();
+    void onDeleteHub();
+    void onSetOnline();
+    void onSetOffline();
+    void onShowStatus();
+    void onSelectionChanged();
+
 private:
     void refreshHubList();
     void applyServerInfo(const QJsonObject &info);
+    QString selectedHubName() const;
+    void setHubActionButtonsEnabled(bool enabled);
 
     VpnServerRpc *m_rpc = nullptr;
+    bool m_hubAdminMode = false;
+
     QTableWidget *m_hubTable;
     QLabel *m_serverInfoLabel;
+    QPushButton *m_createButton;
+    QPushButton *m_editButton;
+    QPushButton *m_deleteButton;
+    QPushButton *m_onlineButton;
+    QPushButton *m_offlineButton;
+    QPushButton *m_statusButton;
     QPushButton *m_refreshButton;
     QPushButton *m_disconnectButton;
 };

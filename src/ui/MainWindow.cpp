@@ -30,9 +30,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() = default;
 
-void MainWindow::onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo)
+void MainWindow::onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode)
 {
-    m_hubListPage->setConnection(rpc, serverInfo);
+    m_hubListPage->setConnection(rpc, serverInfo, hubAdminMode);
     m_stack->setCurrentWidget(m_hubListPage);
 }
 
