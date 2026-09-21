@@ -1,6 +1,7 @@
 #include "HubManagementPage.h"
 #include "GroupListDialog.h"
 #include "HubEditDialog.h"
+#include "SessionListDialog.h"
 #include "UserListDialog.h"
 
 #include <QGridLayout>
@@ -58,11 +59,13 @@ HubManagementPage::HubManagementPage(QWidget *parent)
     auto *caButton = new QPushButton(tr("信頼する証明機関の証明書(&T)"), this);
     auto *crlButton = new QPushButton(tr("無効な証明書(&K)"), this);
     auto *snatButton = new QPushButton(tr("仮想 NAT および仮想 DHCP サーバー機能(&V)"), this);
-    auto *sessionButton = new QPushButton(tr("セッションの管理(&S)"), this);
-    for (QPushButton *button : {logButton, logFileButton, caButton, crlButton, snatButton, sessionButton}) {
+    for (QPushButton *button : {logButton, logFileButton, caButton, crlButton, snatButton}) {
         button->setEnabled(false);
         button->setToolTip(tr("未実装 (今後のフェーズで対応予定)"));
     }
+
+    auto *sessionButton = new QPushButton(tr("セッションの管理(&S)"), this);
+    connect(sessionButton, &QPushButton::clicked, this, &HubManagementPage::onManageSessions);
 
     auto *otherGroup = new QGroupBox(tr("その他の管理"), this);
     auto *otherLayout = new QGridLayout(otherGroup);
@@ -107,6 +110,12 @@ void HubManagementPage::onManageUsers()
 void HubManagementPage::onManageGroups()
 {
     GroupListDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
+}
+
+void HubManagementPage::onManageSessions()
+{
+    SessionListDialog dialog(m_rpc, m_hubName, this);
     dialog.exec();
 }
 

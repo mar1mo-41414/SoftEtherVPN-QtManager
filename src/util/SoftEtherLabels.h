@@ -1,8 +1,10 @@
 #pragma once
 
+#include <QByteArray>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QString>
+#include <QStringList>
 
 // 公式Manager (strtable_ja.stb) の表記に合わせた、複数画面で共有する変換関数。
 namespace SoftEtherLabels {
@@ -55,6 +57,45 @@ inline QString secureNatEnabled(bool enabled)
     // SM_HUB_SECURE_NAT_YES / SM_HUB_SECURE_NAT_NO
     return enabled ? QCoreApplication::translate("SoftEtherLabels", "有効")
                    : QCoreApplication::translate("SoftEtherLabels", "無効");
+}
+
+inline QString macAddress(const QString &base64Bytes)
+{
+    const QByteArray raw = QByteArray::fromBase64(base64Bytes.toUtf8());
+    QStringList parts;
+    for (unsigned char byte : raw) {
+        parts << QString::number(byte, 16).rightJustified(2, QLatin1Char('0')).toUpper();
+    }
+    return parts.join(QLatin1Char(':'));
+}
+
+inline QString sessionLocation(bool linkMode, bool secureNatMode, bool bridgeMode, bool layer3Mode, bool remoteSession,
+                                const QString &remoteHostname)
+{
+    // SM_SESS_LINK / SM_SESS_SNAT / SM_SESS_BRIDGE / SM_SESS_NORMAL / SM_SESS_REMOTE
+    if (linkMode) {
+        return QCoreApplication::translate("SoftEtherLabels", "カスケード接続");
+    }
+    if (secureNatMode) {
+        return QCoreApplication::translate("SoftEtherLabels", "SecureNAT セッション");
+    }
+    if (bridgeMode) {
+        return QCoreApplication::translate("SoftEtherLabels", "ローカルブリッジセッション");
+    }
+    if (layer3Mode) {
+        return QCoreApplication::translate("SoftEtherLabels", "仮想レイヤ 3 スイッチセッション");
+    }
+    if (remoteSession) {
+        return QCoreApplication::translate("SoftEtherLabels", "%1 上").arg(remoteHostname);
+    }
+    return QCoreApplication::translate("SoftEtherLabels", "ローカルセッション");
+}
+
+inline QString macIpLocation(bool remoteItem, const QString &remoteHostname)
+{
+    // SM_MACIP_LOCAL / SM_MACIP_SERVER
+    return remoteItem ? QCoreApplication::translate("SoftEtherLabels", "%1 上").arg(remoteHostname)
+                       : QCoreApplication::translate("SoftEtherLabels", "このサーバー上");
 }
 
 inline QString dateTime(const QString &isoString)

@@ -152,3 +152,65 @@ void VpnServerRpc::deleteGroup(const QString &hubName, const QString &groupName,
     params["Name_str"] = groupName;
     m_client.call(QStringLiteral("DeleteGroup"), params, onResult, onError);
 }
+
+void VpnServerRpc::enumSession(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumSession"), params, onResult, onError);
+}
+
+void VpnServerRpc::getSessionStatus(const QString &hubName, const QString &sessionName,
+                                     const JsonRpcClient::ResultCallback &onResult,
+                                     const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Name_str"] = sessionName;
+    m_client.call(QStringLiteral("GetSessionStatus"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteSession(const QString &hubName, const QString &sessionName,
+                                  const JsonRpcClient::ResultCallback &onResult,
+                                  const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Name_str"] = sessionName;
+    m_client.call(QStringLiteral("DeleteSession"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumMacTable(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                 const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumMacTable"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteMacTable(const QString &hubName, quint32 key, const JsonRpcClient::ResultCallback &onResult,
+                                   const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Key_u32"] = static_cast<qint64>(key);
+    m_client.call(QStringLiteral("DeleteMacTable"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumIpTable(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumIpTable"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteIpTable(const QString &hubName, quint32 key, const JsonRpcClient::ResultCallback &onResult,
+                                  const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Key_u32"] = static_cast<qint64>(key);
+    m_client.call(QStringLiteral("DeleteIpTable"), params, onResult, onError);
+}

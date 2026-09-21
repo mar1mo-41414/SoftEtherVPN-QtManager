@@ -28,8 +28,12 @@
       認証方法はパスワード認証のみ対応(証明書/RADIUS/NT認証・セキュリティポリシー・
       有効期限は未対応、後続フェーズへ)。実機でユーザー/グループの作成・編集・削除、
       実機とのデータ整合性まで確認済み(2026-09-21)
-- [ ] **Phase 5: セッション・テーブル管理** — `EnumSession` / `GetSessionStatus` /
-      `DeleteSession`、`EnumMacTable` / `DeleteMacTable`、`EnumIpTable` / `DeleteIpTable`
+- [x] **Phase 5: セッション・テーブル管理** — `EnumSession` / `GetSessionStatus` /
+      `DeleteSession`、`EnumMacTable` / `DeleteMacTable`、`EnumIpTable` / `DeleteIpTable`。
+      D_SM_SESSION/D_SM_MAC/D_SM_IPの文言・列構成を再現。HUB管理画面の「セッションの管理」
+      から遷移、セッション単位でのMAC/IPテーブル絞り込み表示にも対応。実機でセッション
+      一覧・情報表示・切断・MAC/IPテーブル表示/削除まで確認済み(2026-09-21)。転送バイト数は
+      ポーリングタイミングの差でWindows版と完全一致はしないが正常範囲
 - [ ] **Phase 6: アクセスリスト・カスケード接続** — `AddAccess` / `DeleteAccess` /
       `EnumAccess` / `SetAccessList`、`CreateLink` / `SetLink` / `GetLink` / `EnumLink` /
       `SetLinkOnline` / `SetLinkOffline` / `DeleteLink` / `RenameLink` / `GetLinkStatus`
@@ -48,4 +52,4 @@
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 4 完了・実機確認済み（nux2:5555、実機とのデータ整合性も確認済み）。次はPhase 5（セッション・MACテーブル・IPテーブル管理）。
+Phase 5 完了・実機確認済み（nux2:5555）。次はPhase 6（アクセスリスト・カスケード接続）。

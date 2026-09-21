@@ -43,6 +43,14 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/GroupEditDialog.cpp
     src/ui/GroupListDialog.h
     src/ui/GroupListDialog.cpp
+    src/ui/SessionListDialog.h
+    src/ui/SessionListDialog.cpp
+    src/ui/SessionStatusDialog.h
+    src/ui/SessionStatusDialog.cpp
+    src/ui/MacTableDialog.h
+    src/ui/MacTableDialog.cpp
+    src/ui/IpTableDialog.h
+    src/ui/IpTableDialog.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
 )

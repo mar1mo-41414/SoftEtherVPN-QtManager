@@ -55,6 +55,23 @@ public:
     void deleteGroup(const QString &hubName, const QString &groupName, const JsonRpcClient::ResultCallback &onResult,
                       const JsonRpcClient::ErrorCallback &onError);
 
+    void enumSession(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                      const JsonRpcClient::ErrorCallback &onError);
+    void getSessionStatus(const QString &hubName, const QString &sessionName,
+                           const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void deleteSession(const QString &hubName, const QString &sessionName,
+                        const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+
+    void enumMacTable(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                       const JsonRpcClient::ErrorCallback &onError);
+    void deleteMacTable(const QString &hubName, quint32 key, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError);
+
+    void enumIpTable(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                      const JsonRpcClient::ErrorCallback &onError);
+    void deleteIpTable(const QString &hubName, quint32 key, const JsonRpcClient::ResultCallback &onResult,
+                        const JsonRpcClient::ErrorCallback &onError);
+
 private:
     JsonRpcClient m_client;
 };
