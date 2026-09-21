@@ -37,11 +37,13 @@ HubListPage::HubListPage(QWidget *parent)
     m_hubTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_hubTable->setSelectionMode(QAbstractItemView::SingleSelection);
     connect(m_hubTable, &QTableWidget::itemSelectionChanged, this, &HubListPage::onSelectionChanged);
-    connect(m_hubTable, &QTableWidget::cellDoubleClicked, this, &HubListPage::onEditHub);
+    connect(m_hubTable, &QTableWidget::cellDoubleClicked, this, &HubListPage::onManageHub);
 
     m_serverInfoLabel = new QLabel(this);
 
-    // D_SM_SERVER: B_CREATE / B_EDIT / B_DELETE / B_ONLINE / B_OFFLINE / B_HUB_STATUS
+    // D_SM_SERVER: IDOK(仮想HUBの管理) / B_CREATE / B_EDIT / B_DELETE / B_ONLINE / B_OFFLINE / B_HUB_STATUS
+    m_manageButton = new QPushButton(tr("仮想 HUB の管理(&A)"), this);
+    m_manageButton->setDefault(true);
     m_createButton = new QPushButton(tr("仮想 HUB の作成(&C)"), this);
     m_editButton = new QPushButton(tr("プロパティ(&E)"), this);
     m_deleteButton = new QPushButton(tr("削除(&D)"), this);
@@ -52,6 +54,7 @@ HubListPage::HubListPage(QWidget *parent)
     m_refreshButton = new QPushButton(tr("最新の状態に更新(&H)"), this);
     m_disconnectButton = new QPushButton(tr("閉じる(&X)"), this);
 
+    connect(m_manageButton, &QPushButton::clicked, this, &HubListPage::onManageHub);
     connect(m_createButton, &QPushButton::clicked, this, &HubListPage::onCreateHub);
     connect(m_editButton, &QPushButton::clicked, this, &HubListPage::onEditHub);
     connect(m_deleteButton, &QPushButton::clicked, this, &HubListPage::onDeleteHub);
@@ -62,6 +65,7 @@ HubListPage::HubListPage(QWidget *parent)
     connect(m_disconnectButton, &QPushButton::clicked, this, &HubListPage::disconnectRequested);
 
     auto *buttonLayout = new QHBoxLayout;
+    buttonLayout->addWidget(m_manageButton);
     buttonLayout->addWidget(m_createButton);
     buttonLayout->addWidget(m_editButton);
     buttonLayout->addWidget(m_deleteButton);
@@ -116,6 +120,7 @@ QString HubListPage::selectedHubName() const
 
 void HubListPage::setHubActionButtonsEnabled(bool enabled)
 {
+    m_manageButton->setEnabled(enabled);
     m_editButton->setEnabled(enabled);
     m_deleteButton->setEnabled(enabled && !m_hubAdminMode);
     m_onlineButton->setEnabled(enabled);
@@ -269,6 +274,15 @@ void HubListPage::onSetOffline()
             QMessageBox::warning(this, tr("エラー"),
                                   tr("仮想 HUB のオフライン化に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
+}
+
+void HubListPage::onManageHub()
+{
+    const QString hubName = selectedHubName();
+    if (hubName.isEmpty()) {
+        return;
+    }
+    emit manageHubRequested(m_rpc, hubName);
 }
 
 void HubListPage::onShowStatus()

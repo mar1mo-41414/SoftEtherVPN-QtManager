@@ -24,6 +24,8 @@ public:
 
 signals:
     void disconnectRequested();
+    // rpcの所有権はHubListPageに残したまま (借用で使わせる)。
+    void manageHubRequested(VpnServerRpc *rpc, const QString &hubName);
 
 private slots:
     void onCreateHub();
@@ -32,6 +34,7 @@ private slots:
     void onSetOnline();
     void onSetOffline();
     void onShowStatus();
+    void onManageHub();
     void onSelectionChanged();
 
 private:
@@ -45,6 +48,7 @@ private:
 
     QTableWidget *m_hubTable;
     QLabel *m_serverInfoLabel;
+    QPushButton *m_manageButton;
     QPushButton *m_createButton;
     QPushButton *m_editButton;
     QPushButton *m_deleteButton;

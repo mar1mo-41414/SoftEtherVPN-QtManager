@@ -5,10 +5,11 @@
 class QStackedWidget;
 class ConnectionListPage;
 class HubListPage;
+class HubManagementPage;
 class VpnServerRpc;
 class QJsonObject;
 
-// アプリのトップレベルウィンドウ。接続設定一覧画面と、接続後の仮想HUB一覧画面を
+// アプリのトップレベルウィンドウ。接続設定一覧・仮想HUB一覧・仮想HUB管理の3画面を
 // QStackedWidgetで切り替える (公式Managerが1つのウィンドウの中身を差し替えるのと同じ構成)。
 class MainWindow : public QMainWindow
 {
@@ -19,11 +20,18 @@ public:
     ~MainWindow() override;
 
 private slots:
-    void onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode);
+    void onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode, const QString &hubName);
     void onDisconnectRequested();
+    void onManageHubRequested(VpnServerRpc *rpc, const QString &hubName);
+    void onHubManagementBackRequested();
 
 private:
     QStackedWidget *m_stack;
     ConnectionListPage *m_connectionListPage;
     HubListPage *m_hubListPage;
+    HubManagementPage *m_hubManagementPage;
+
+    // 仮想HUB管理モードでの接続時は仮想HUB一覧をスキップして直接この画面に入るため、
+    // 「閉じる」で戻る先を憶えておく必要がある。
+    bool m_hubManagementEnteredDirectly = false;
 };

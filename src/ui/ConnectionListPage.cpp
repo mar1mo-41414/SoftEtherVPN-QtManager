@@ -183,11 +183,12 @@ void ConnectionListPage::connectToProfile(const ConnectionProfile &profile)
     rpc->connectToServer(profile.host, profile.port, profile.hubAdminMode ? profile.hubName : QString(), password);
 
     const bool hubAdminMode = profile.hubAdminMode;
+    const QString hubName = profile.hubName;
     rpc->test(
-        [this, rpc, hubAdminMode](const QJsonObject &) {
+        [this, rpc, hubAdminMode, hubName](const QJsonObject &) {
             rpc->getServerInfo(
-                [this, rpc, hubAdminMode](const QJsonObject &info) {
-                    emit connected(rpc, info, hubAdminMode);
+                [this, rpc, hubAdminMode, hubName](const QJsonObject &info) {
+                    emit connected(rpc, info, hubAdminMode, hubName);
                 },
                 [this, rpc](const RpcError &error) {
                     rpc->deleteLater();

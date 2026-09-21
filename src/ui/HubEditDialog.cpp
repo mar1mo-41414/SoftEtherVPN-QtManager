@@ -14,7 +14,6 @@
 
 HubEditDialog::HubEditDialog(bool isNew, QWidget *parent)
     : QDialog(parent)
-    , m_isNew(isNew)
 {
     setWindowTitle(isNew ? tr("仮想 HUB の作成") : tr("仮想 HUB のプロパティ"));
 

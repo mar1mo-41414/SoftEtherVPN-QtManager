@@ -33,6 +33,28 @@ public:
     void getHubStatus(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
                        const JsonRpcClient::ErrorCallback &onError);
 
+    void enumUser(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                  const JsonRpcClient::ErrorCallback &onError);
+    void createUser(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                     const JsonRpcClient::ErrorCallback &onError);
+    void setUser(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                 const JsonRpcClient::ErrorCallback &onError);
+    void getUser(const QString &hubName, const QString &userName, const JsonRpcClient::ResultCallback &onResult,
+                 const JsonRpcClient::ErrorCallback &onError);
+    void deleteUser(const QString &hubName, const QString &userName, const JsonRpcClient::ResultCallback &onResult,
+                     const JsonRpcClient::ErrorCallback &onError);
+
+    void enumGroup(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                   const JsonRpcClient::ErrorCallback &onError);
+    void createGroup(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                      const JsonRpcClient::ErrorCallback &onError);
+    void setGroup(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                  const JsonRpcClient::ErrorCallback &onError);
+    void getGroup(const QString &hubName, const QString &groupName, const JsonRpcClient::ResultCallback &onResult,
+                  const JsonRpcClient::ErrorCallback &onError);
+    void deleteGroup(const QString &hubName, const QString &groupName, const JsonRpcClient::ResultCallback &onResult,
+                      const JsonRpcClient::ErrorCallback &onError);
+
 private:
     JsonRpcClient m_client;
 };

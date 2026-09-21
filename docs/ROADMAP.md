@@ -20,9 +20,14 @@
       と同時に見比べても差異なし(2026-09-21)。仮想HUB管理オプション/接続元IP制限リスト/
       拡張オプション/メッセージ設定/クラスタリング(スタティック・ダイナミック)は
       D_SM_EDIT_HUBの範囲外として後続フェーズへ
-- [ ] **Phase 4: HUB管理ダイアログ（ユーザー/グループ）** — `CreateUser` / `SetUser` /
+- [x] **Phase 4: HUB管理ダイアログ（ユーザー/グループ）** — `CreateUser` / `SetUser` /
       `GetUser` / `DeleteUser` / `EnumUser`、`CreateGroup` / `SetGroup` / `GetGroup` /
-      `DeleteGroup` / `EnumGroup`
+      `DeleteGroup` / `EnumGroup`。D_SM_HUB(仮想HUB管理の入口)・D_SM_USER/D_SM_EDIT_USER・
+      D_SM_GROUP/D_SM_EDIT_GROUPの文言を再現。仮想HUB一覧から「仮想 HUB の管理」で
+      D_SM_HUB画面に入る導線を追加、仮想HUB管理モード接続時はここに直接入る。
+      認証方法はパスワード認証のみ対応(証明書/RADIUS/NT認証・セキュリティポリシー・
+      有効期限は未対応、後続フェーズへ)。実機でユーザー/グループの作成・編集・削除、
+      実機とのデータ整合性まで確認済み(2026-09-21)
 - [ ] **Phase 5: セッション・テーブル管理** — `EnumSession` / `GetSessionStatus` /
       `DeleteSession`、`EnumMacTable` / `DeleteMacTable`、`EnumIpTable` / `DeleteIpTable`
 - [ ] **Phase 6: アクセスリスト・カスケード接続** — `AddAccess` / `DeleteAccess` /
@@ -43,4 +48,4 @@
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 3 完了・実機確認済み（nux2:5555、Windows版公式Managerとの比較確認済み）。次はPhase 4（HUB管理ダイアログのユーザー/グループ）。
+Phase 4 完了・実機確認済み（nux2:5555、実機とのデータ整合性も確認済み）。次はPhase 5（セッション・MACテーブル・IPテーブル管理）。

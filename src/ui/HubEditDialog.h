@@ -30,7 +30,6 @@ private slots:
     void accept() override;
 
 private:
-    bool m_isNew;
     QLineEdit *m_nameEdit;
     QLineEdit *m_passwordEdit;
     QLineEdit *m_passwordConfirmEdit;

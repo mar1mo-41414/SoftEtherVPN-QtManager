@@ -76,3 +76,79 @@ void VpnServerRpc::getHubStatus(const QString &hubName, const JsonRpcClient::Res
     params["HubName_str"] = hubName;
     m_client.call(QStringLiteral("GetHubStatus"), params, onResult, onError);
 }
+
+void VpnServerRpc::enumUser(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                             const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumUser"), params, onResult, onError);
+}
+
+void VpnServerRpc::createUser(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                               const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("CreateUser"), params, onResult, onError);
+}
+
+void VpnServerRpc::setUser(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                            const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("SetUser"), params, onResult, onError);
+}
+
+void VpnServerRpc::getUser(const QString &hubName, const QString &userName, const JsonRpcClient::ResultCallback &onResult,
+                            const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Name_str"] = userName;
+    m_client.call(QStringLiteral("GetUser"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteUser(const QString &hubName, const QString &userName,
+                               const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Name_str"] = userName;
+    m_client.call(QStringLiteral("DeleteUser"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumGroup(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                              const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumGroup"), params, onResult, onError);
+}
+
+void VpnServerRpc::createGroup(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                                const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("CreateGroup"), params, onResult, onError);
+}
+
+void VpnServerRpc::setGroup(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                             const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("SetGroup"), params, onResult, onError);
+}
+
+void VpnServerRpc::getGroup(const QString &hubName, const QString &groupName,
+                             const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Name_str"] = groupName;
+    m_client.call(QStringLiteral("GetGroup"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteGroup(const QString &hubName, const QString &groupName,
+                                const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    params["Name_str"] = groupName;
+    m_client.call(QStringLiteral("DeleteGroup"), params, onResult, onError);
+}

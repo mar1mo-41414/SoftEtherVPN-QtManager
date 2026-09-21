@@ -29,6 +29,27 @@ inline QString hubType(int hubType)
     }
 }
 
+inline QString authType(int authType)
+{
+    // SM_AUTHTYPE_0〜5
+    switch (authType) {
+    case 0:
+        return QCoreApplication::translate("SoftEtherLabels", "匿名認証");
+    case 1:
+        return QCoreApplication::translate("SoftEtherLabels", "パスワード認証");
+    case 2:
+        return QCoreApplication::translate("SoftEtherLabels", "固有証明書認証");
+    case 3:
+        return QCoreApplication::translate("SoftEtherLabels", "署名済み証明書認証");
+    case 4:
+        return QCoreApplication::translate("SoftEtherLabels", "RADIUS 認証");
+    case 5:
+        return QCoreApplication::translate("SoftEtherLabels", "NT ドメイン認証");
+    default:
+        return QCoreApplication::translate("SoftEtherLabels", "不明");
+    }
+}
+
 inline QString secureNatEnabled(bool enabled)
 {
     // SM_HUB_SECURE_NAT_YES / SM_HUB_SECURE_NAT_NO
