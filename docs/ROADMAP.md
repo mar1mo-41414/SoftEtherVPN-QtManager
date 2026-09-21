@@ -43,9 +43,14 @@
       カスケード接続は匿名/パスワード認証のみ対応(証明書認証・プロキシ経由・
       セキュリティポリシーは未対応)。`SetAccessList`(一括置換)は未使用。
       実機でアクセスリスト・カスケード接続とも一通り確認済み(2026-09-21)
-- [ ] **Phase 7: SecureNAT・ローカルブリッジ** — `EnableSecureNAT` / `DisableSecureNAT` /
-      `SetSecureNATOption` / `GetSecureNATOption` / `EnumNAT` / `EnumDHCP`、
-      `EnumEthernet` / `AddLocalBridge` / `DeleteLocalBridge` / `EnumLocalBridge`
+- [x] **Phase 7: SecureNAT・ローカルブリッジ** — `EnableSecureNAT` / `DisableSecureNAT` /
+      `SetSecureNATOption` / `GetSecureNATOption` / `GetSecureNATStatus` / `EnumNAT` /
+      `EnumDHCP`、`EnumEthernet` / `AddLocalBridge` / `DeleteLocalBridge` / `EnumLocalBridge`。
+      D_SM_SNAT/D_NM_OPTION/D_NM_NAT/D_NM_DHCP(HUB管理画面から)・D_SM_BRIDGE(仮想HUB
+      一覧画面から、サーバー全体機能)の文言を再現。SecureNAT無効時は設定/状況表示系
+      ボタンをグレーアウトする公式Managerの挙動も再現(ユーザー指摘により追加)。
+      静的ルーティングテーブルのプッシュ・タグVLANパケット透過設定ツールは未対応。
+      実機でSecureNAT・ローカルブリッジとも動作確認済み(2026-09-21)
 - [ ] **Phase 8: サーバー全体設定** — リスナー管理（`CreateListener` 等）、証明書
       （`SetServerCert` / `GetServerCert` / `RegenerateServerCert`）、暗号設定
       （`GetServerCipher` / `SetServerCipher`）、ログ閲覧（`EnumLogFile` / `ReadLogFile`）、
@@ -58,4 +63,4 @@
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 6 完了・実機確認済み（nux2:5555）。次はPhase 7（SecureNAT・ローカルブリッジ）。
+Phase 7 完了・実機確認済み（nux2:5555）。次はPhase 8（サーバー全体設定: リスナー管理・証明書・暗号設定・ログ閲覧・syslog）。

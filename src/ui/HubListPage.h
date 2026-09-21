@@ -35,6 +35,7 @@ private slots:
     void onSetOffline();
     void onShowStatus();
     void onManageHub();
+    void onManageLocalBridge();
     void onSelectionChanged();
 
 private:
@@ -56,5 +57,6 @@ private:
     QPushButton *m_offlineButton;
     QPushButton *m_statusButton;
     QPushButton *m_refreshButton;
+    QPushButton *m_localBridgeButton;
     QPushButton *m_disconnectButton;
 };

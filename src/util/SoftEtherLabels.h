@@ -59,6 +59,16 @@ inline QString secureNatEnabled(bool enabled)
                    : QCoreApplication::translate("SoftEtherLabels", "無効");
 }
 
+// "AA:BB:CC:DD:EE:FF" や "AA-BB-CC-DD-EE-FF" 形式の文字列をAPIが要求するbase64表現に変換する。
+inline QString macAddressToBase64(const QString &text)
+{
+    QString hex = text;
+    hex.remove(QLatin1Char(':'));
+    hex.remove(QLatin1Char('-'));
+    const QByteArray raw = QByteArray::fromHex(hex.toUtf8());
+    return QString::fromLatin1(raw.toBase64());
+}
+
 inline QString macAddress(const QString &base64Bytes)
 {
     const QByteArray raw = QByteArray::fromBase64(base64Bytes.toUtf8());
@@ -104,6 +114,23 @@ inline QString protocolName(int protocol)
         return QCoreApplication::translate("SoftEtherLabels", "UDP");
     case 58:
         return QCoreApplication::translate("SoftEtherLabels", "ICMPv6");
+    default:
+        return QString::number(protocol);
+    }
+}
+
+inline QString natProtocolName(int protocol)
+{
+    // EnumNATのProtocol_u32は0:TCP/1:UDP/2:DNS/3:ICMPという専用の列挙。
+    switch (protocol) {
+    case 0:
+        return QCoreApplication::translate("SoftEtherLabels", "TCP");
+    case 1:
+        return QCoreApplication::translate("SoftEtherLabels", "UDP");
+    case 2:
+        return QCoreApplication::translate("SoftEtherLabels", "DNS");
+    case 3:
+        return QCoreApplication::translate("SoftEtherLabels", "ICMP");
     default:
         return QString::number(protocol);
     }

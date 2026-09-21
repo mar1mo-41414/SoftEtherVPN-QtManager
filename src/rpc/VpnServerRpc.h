@@ -98,6 +98,28 @@ public:
     void getLinkStatus(const QString &hubName, const QString &accountName, const JsonRpcClient::ResultCallback &onResult,
                         const JsonRpcClient::ErrorCallback &onError);
 
+    void enableSecureNAT(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError);
+    void disableSecureNAT(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                          const JsonRpcClient::ErrorCallback &onError);
+    void setSecureNATOption(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                             const JsonRpcClient::ErrorCallback &onError);
+    void getSecureNATOption(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                             const JsonRpcClient::ErrorCallback &onError);
+    void getSecureNATStatus(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                             const JsonRpcClient::ErrorCallback &onError);
+    void enumNAT(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                 const JsonRpcClient::ErrorCallback &onError);
+    void enumDHCP(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                  const JsonRpcClient::ErrorCallback &onError);
+
+    void enumEthernet(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void addLocalBridge(const QString &deviceName, const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError);
+    void deleteLocalBridge(const QString &deviceName, const QString &hubName,
+                            const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void enumLocalBridge(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+
 private:
     JsonRpcClient m_client;
 };

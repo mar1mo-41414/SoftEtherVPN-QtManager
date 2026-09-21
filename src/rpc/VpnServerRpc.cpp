@@ -319,3 +319,86 @@ void VpnServerRpc::getLinkStatus(const QString &hubName, const QString &accountN
     params["AccountName_utf"] = accountName;
     m_client.call(QStringLiteral("GetLinkStatus"), params, onResult, onError);
 }
+
+void VpnServerRpc::enableSecureNAT(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                    const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnableSecureNAT"), params, onResult, onError);
+}
+
+void VpnServerRpc::disableSecureNAT(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                     const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("DisableSecureNAT"), params, onResult, onError);
+}
+
+void VpnServerRpc::setSecureNATOption(const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                                       const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("SetSecureNATOption"), params, onResult, onError);
+}
+
+void VpnServerRpc::getSecureNATOption(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                       const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["RpcHubName_str"] = hubName;
+    m_client.call(QStringLiteral("GetSecureNATOption"), params, onResult, onError);
+}
+
+void VpnServerRpc::getSecureNATStatus(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                                       const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("GetSecureNATStatus"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumNAT(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                            const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumNAT"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumDHCP(const QString &hubName, const JsonRpcClient::ResultCallback &onResult,
+                             const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["HubName_str"] = hubName;
+    m_client.call(QStringLiteral("EnumDHCP"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumEthernet(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("EnumEthernet"), {}, onResult, onError);
+}
+
+void VpnServerRpc::addLocalBridge(const QString &deviceName, const QString &hubName,
+                                   const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["DeviceName_str"] = deviceName;
+    params["HubNameLB_str"] = hubName;
+    m_client.call(QStringLiteral("AddLocalBridge"), params, onResult, onError);
+}
+
+void VpnServerRpc::deleteLocalBridge(const QString &deviceName, const QString &hubName,
+                                      const JsonRpcClient::ResultCallback &onResult,
+                                      const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["DeviceName_str"] = deviceName;
+    params["HubNameLB_str"] = hubName;
+    m_client.call(QStringLiteral("DeleteLocalBridge"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumLocalBridge(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("EnumLocalBridge"), {}, onResult, onError);
+}

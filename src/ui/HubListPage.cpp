@@ -1,6 +1,7 @@
 #include "HubListPage.h"
 #include "HubEditDialog.h"
 #include "HubStatusDialog.h"
+#include "LocalBridgeDialog.h"
 
 #include "util/SoftEtherLabels.h"
 
@@ -50,7 +51,8 @@ HubListPage::HubListPage(QWidget *parent)
     m_onlineButton = new QPushButton(tr("オンライン(&O)"), this);
     m_offlineButton = new QPushButton(tr("オフライン(&F)"), this);
     m_statusButton = new QPushButton(tr("状態の表示(&S)"), this);
-    // B_REFRESH / IDCANCEL
+    // B_BRIDGE / B_REFRESH / IDCANCEL
+    m_localBridgeButton = new QPushButton(tr("ローカルブリッジ設定(&B)"), this);
     m_refreshButton = new QPushButton(tr("最新の状態に更新(&H)"), this);
     m_disconnectButton = new QPushButton(tr("閉じる(&X)"), this);
 
@@ -61,6 +63,7 @@ HubListPage::HubListPage(QWidget *parent)
     connect(m_onlineButton, &QPushButton::clicked, this, &HubListPage::onSetOnline);
     connect(m_offlineButton, &QPushButton::clicked, this, &HubListPage::onSetOffline);
     connect(m_statusButton, &QPushButton::clicked, this, &HubListPage::onShowStatus);
+    connect(m_localBridgeButton, &QPushButton::clicked, this, &HubListPage::onManageLocalBridge);
     connect(m_refreshButton, &QPushButton::clicked, this, &HubListPage::refreshHubList);
     connect(m_disconnectButton, &QPushButton::clicked, this, &HubListPage::disconnectRequested);
 
@@ -72,6 +75,7 @@ HubListPage::HubListPage(QWidget *parent)
     buttonLayout->addWidget(m_onlineButton);
     buttonLayout->addWidget(m_offlineButton);
     buttonLayout->addWidget(m_statusButton);
+    buttonLayout->addWidget(m_localBridgeButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_refreshButton);
     buttonLayout->addWidget(m_disconnectButton);
@@ -93,8 +97,10 @@ void HubListPage::setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo
     m_rpc->setParent(this);
     m_hubAdminMode = hubAdminMode;
 
-    // 仮想HUB管理モードでは仮想HUBの作成/削除にサーバー管理権限が必要なため操作させない。
+    // 仮想HUB管理モードでは仮想HUBの作成/削除・ローカルブリッジ設定にサーバー管理権限が
+    // 必要なため操作させない。
     m_createButton->setEnabled(!hubAdminMode);
+    m_localBridgeButton->setEnabled(!hubAdminMode);
     m_deleteButton->setEnabled(false);
 
     applyServerInfo(serverInfo);
@@ -283,6 +289,16 @@ void HubListPage::onManageHub()
         return;
     }
     emit manageHubRequested(m_rpc, hubName);
+}
+
+void HubListPage::onManageLocalBridge()
+{
+    QStringList hubNames;
+    for (int row = 0; row < m_hubTable->rowCount(); ++row) {
+        hubNames << m_hubTable->item(row, 0)->text();
+    }
+    LocalBridgeDialog dialog(m_rpc, hubNames, this);
+    dialog.exec();
 }
 
 void HubListPage::onShowStatus()
