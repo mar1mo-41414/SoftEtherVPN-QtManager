@@ -1,7 +1,9 @@
 #include "HubListPage.h"
 #include "HubEditDialog.h"
 #include "HubStatusDialog.h"
+#include "ListenerDialog.h"
 #include "LocalBridgeDialog.h"
+#include "ServerSettingsDialog.h"
 
 #include "util/SoftEtherLabels.h"
 
@@ -51,8 +53,10 @@ HubListPage::HubListPage(QWidget *parent)
     m_onlineButton = new QPushButton(tr("オンライン(&O)"), this);
     m_offlineButton = new QPushButton(tr("オフライン(&F)"), this);
     m_statusButton = new QPushButton(tr("状態の表示(&S)"), this);
-    // B_BRIDGE / B_REFRESH / IDCANCEL
+    // B_BRIDGE / B_SSL / B_REFRESH / IDCANCEL
     m_localBridgeButton = new QPushButton(tr("ローカルブリッジ設定(&B)"), this);
+    m_listenerButton = new QPushButton(tr("リスナーの管理(&J)"), this);
+    m_serverSettingsButton = new QPushButton(tr("暗号化と通信関係の設定(&W)"), this);
     m_refreshButton = new QPushButton(tr("最新の状態に更新(&H)"), this);
     m_disconnectButton = new QPushButton(tr("閉じる(&X)"), this);
 
@@ -64,6 +68,8 @@ HubListPage::HubListPage(QWidget *parent)
     connect(m_offlineButton, &QPushButton::clicked, this, &HubListPage::onSetOffline);
     connect(m_statusButton, &QPushButton::clicked, this, &HubListPage::onShowStatus);
     connect(m_localBridgeButton, &QPushButton::clicked, this, &HubListPage::onManageLocalBridge);
+    connect(m_listenerButton, &QPushButton::clicked, this, &HubListPage::onManageListeners);
+    connect(m_serverSettingsButton, &QPushButton::clicked, this, &HubListPage::onManageServerSettings);
     connect(m_refreshButton, &QPushButton::clicked, this, &HubListPage::refreshHubList);
     connect(m_disconnectButton, &QPushButton::clicked, this, &HubListPage::disconnectRequested);
 
@@ -76,6 +82,8 @@ HubListPage::HubListPage(QWidget *parent)
     buttonLayout->addWidget(m_offlineButton);
     buttonLayout->addWidget(m_statusButton);
     buttonLayout->addWidget(m_localBridgeButton);
+    buttonLayout->addWidget(m_listenerButton);
+    buttonLayout->addWidget(m_serverSettingsButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_refreshButton);
     buttonLayout->addWidget(m_disconnectButton);
@@ -97,10 +105,12 @@ void HubListPage::setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo
     m_rpc->setParent(this);
     m_hubAdminMode = hubAdminMode;
 
-    // 仮想HUB管理モードでは仮想HUBの作成/削除・ローカルブリッジ設定にサーバー管理権限が
-    // 必要なため操作させない。
+    // 仮想HUB管理モードでは仮想HUBの作成/削除・ローカルブリッジ設定・リスナー管理・
+    // サーバー設定にサーバー管理権限が必要なため操作させない。
     m_createButton->setEnabled(!hubAdminMode);
     m_localBridgeButton->setEnabled(!hubAdminMode);
+    m_listenerButton->setEnabled(!hubAdminMode);
+    m_serverSettingsButton->setEnabled(!hubAdminMode);
     m_deleteButton->setEnabled(false);
 
     applyServerInfo(serverInfo);
@@ -298,6 +308,18 @@ void HubListPage::onManageLocalBridge()
         hubNames << m_hubTable->item(row, 0)->text();
     }
     LocalBridgeDialog dialog(m_rpc, hubNames, this);
+    dialog.exec();
+}
+
+void HubListPage::onManageListeners()
+{
+    ListenerDialog dialog(m_rpc, this);
+    dialog.exec();
+}
+
+void HubListPage::onManageServerSettings()
+{
+    ServerSettingsDialog dialog(m_rpc, this);
     dialog.exec();
 }
 

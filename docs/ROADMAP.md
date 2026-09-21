@@ -51,10 +51,15 @@
       ボタンをグレーアウトする公式Managerの挙動も再現(ユーザー指摘により追加)。
       静的ルーティングテーブルのプッシュ・タグVLANパケット透過設定ツールは未対応。
       実機でSecureNAT・ローカルブリッジとも動作確認済み(2026-09-21)
-- [ ] **Phase 8: サーバー全体設定** — リスナー管理（`CreateListener` 等）、証明書
-      （`SetServerCert` / `GetServerCert` / `RegenerateServerCert`）、暗号設定
-      （`GetServerCipher` / `SetServerCipher`）、ログ閲覧（`EnumLogFile` / `ReadLogFile`）、
-      syslog（`SetSysLog` / `GetSysLog`）
+- [x] **Phase 8: サーバー全体設定** — リスナー管理（`CreateListener` / `EnumListener` /
+      `DeleteListener` / `EnableListener`）、証明書（`SetServerCert` / `GetServerCert` /
+      `RegenerateServerCert`）、暗号設定（`GetServerCipher` / `SetServerCipher`）、
+      ログ閲覧（`EnumLogFile` / `ReadLogFile`）、syslog（`SetSysLog` / `GetSysLog`）。
+      D_SM_SSL(暗号化と通信関係の設定に証明書+暗号+syslogを統合)・D_SM_CREATE_LISTENER・
+      D_SM_LOG_FILE・D_CERTの文言を再現。証明書インポートはSoftEther独自のDER形式
+      (.cer/.key)のみ対応(PEM形式は未対応)。インターネット接続維持機能・管理者
+      パスワード変更・VPN over ICMP/DNS設定は未対応(後続フェーズへ)。
+      実機で一通り確認済み(2026-09-21)
 - [ ] **Phase 9: 拡張機能** — IPsec/L2TP（`SetIPsecServices` 等）、EtherIP/L2TPv3
       （`*EtherIpId`）、OpenVPN/SSTPクローン設定（`SetOpenVpnSstpConfig`）、
       DDNS（`GetDDnsClientStatus` 等）、VPN Azure、クラスタ/Farm設定、L3スイッチ
@@ -63,4 +68,4 @@
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 7 完了・実機確認済み（nux2:5555）。次はPhase 8（サーバー全体設定: リスナー管理・証明書・暗号設定・ログ閲覧・syslog）。
+Phase 8 完了・実機確認済み（nux2:5555）。次はPhase 9（IPsec/L2TP・EtherIP・OpenVPN/SSTP・DDNS・VPN Azure等の拡張機能）。

@@ -3,6 +3,7 @@
 #include "CascadeLinkListDialog.h"
 #include "GroupListDialog.h"
 #include "HubEditDialog.h"
+#include "LogFileListDialog.h"
 #include "SecureNatDialog.h"
 #include "SessionListDialog.h"
 #include "UserListDialog.h"
@@ -56,13 +57,15 @@ HubManagementPage::HubManagementPage(QWidget *parent)
 
     // STATIC4: その他の管理
     auto *logButton = new QPushButton(tr("ログ保存設定(&L)"), this);
-    auto *logFileButton = new QPushButton(tr("ログファイル一覧(&Q)"), this);
     auto *caButton = new QPushButton(tr("信頼する証明機関の証明書(&T)"), this);
     auto *crlButton = new QPushButton(tr("無効な証明書(&K)"), this);
-    for (QPushButton *button : {logButton, logFileButton, caButton, crlButton}) {
+    for (QPushButton *button : {logButton, caButton, crlButton}) {
         button->setEnabled(false);
         button->setToolTip(tr("未実装 (今後のフェーズで対応予定)"));
     }
+
+    auto *logFileButton = new QPushButton(tr("ログファイル一覧(&Q)"), this);
+    connect(logFileButton, &QPushButton::clicked, this, &HubManagementPage::onManageLogFiles);
 
     auto *snatButton = new QPushButton(tr("仮想 NAT および仮想 DHCP サーバー機能(&V)"), this);
     connect(snatButton, &QPushButton::clicked, this, &HubManagementPage::onManageSecureNAT);
@@ -137,6 +140,12 @@ void HubManagementPage::onManageCascadeLinks()
 void HubManagementPage::onManageSecureNAT()
 {
     SecureNatDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
+}
+
+void HubManagementPage::onManageLogFiles()
+{
+    LogFileListDialog dialog(m_rpc, this);
     dialog.exec();
 }
 

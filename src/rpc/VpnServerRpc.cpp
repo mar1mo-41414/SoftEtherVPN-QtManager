@@ -402,3 +402,98 @@ void VpnServerRpc::enumLocalBridge(const JsonRpcClient::ResultCallback &onResult
 {
     m_client.call(QStringLiteral("EnumLocalBridge"), {}, onResult, onError);
 }
+
+void VpnServerRpc::createListener(quint16 port, bool enable, const JsonRpcClient::ResultCallback &onResult,
+                                   const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["Port_u32"] = port;
+    params["Enable_bool"] = enable;
+    m_client.call(QStringLiteral("CreateListener"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumListener(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("EnumListener"), {}, onResult, onError);
+}
+
+void VpnServerRpc::deleteListener(quint16 port, const JsonRpcClient::ResultCallback &onResult,
+                                   const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["Port_u32"] = port;
+    m_client.call(QStringLiteral("DeleteListener"), params, onResult, onError);
+}
+
+void VpnServerRpc::enableListener(quint16 port, bool enable, const JsonRpcClient::ResultCallback &onResult,
+                                   const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["Port_u32"] = port;
+    params["Enable_bool"] = enable;
+    m_client.call(QStringLiteral("EnableListener"), params, onResult, onError);
+}
+
+void VpnServerRpc::getServerCert(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("GetServerCert"), {}, onResult, onError);
+}
+
+void VpnServerRpc::setServerCert(const QString &certBase64, const QString &keyBase64,
+                                  const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["Cert_bin"] = certBase64;
+    params["Key_bin"] = keyBase64;
+    m_client.call(QStringLiteral("SetServerCert"), params, onResult, onError);
+}
+
+void VpnServerRpc::regenerateServerCert(const QString &commonName, const JsonRpcClient::ResultCallback &onResult,
+                                         const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["StrValue_str"] = commonName;
+    m_client.call(QStringLiteral("RegenerateServerCert"), params, onResult, onError);
+}
+
+void VpnServerRpc::getServerCipher(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("GetServerCipher"), {}, onResult, onError);
+}
+
+void VpnServerRpc::setServerCipher(const QString &cipher, const JsonRpcClient::ResultCallback &onResult,
+                                    const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["String_str"] = cipher;
+    m_client.call(QStringLiteral("SetServerCipher"), params, onResult, onError);
+}
+
+void VpnServerRpc::enumLogFile(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("EnumLogFile"), {}, onResult, onError);
+}
+
+void VpnServerRpc::readLogFile(const QString &filePath, quint32 offset, const JsonRpcClient::ResultCallback &onResult,
+                                const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["FilePath_str"] = filePath;
+    params["Offset_u32"] = static_cast<qint64>(offset);
+    m_client.call(QStringLiteral("ReadLogFile"), params, onResult, onError);
+}
+
+void VpnServerRpc::getSysLog(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(QStringLiteral("GetSysLog"), {}, onResult, onError);
+}
+
+void VpnServerRpc::setSysLog(int saveType, const QString &hostname, quint16 port,
+                              const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
+{
+    QJsonObject params;
+    params["SaveType_u32"] = saveType;
+    params["Hostname_str"] = hostname;
+    params["Port_u32"] = port;
+    m_client.call(QStringLiteral("SetSysLog"), params, onResult, onError);
+}

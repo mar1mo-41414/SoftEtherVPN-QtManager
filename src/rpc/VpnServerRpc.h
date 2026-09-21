@@ -120,6 +120,31 @@ public:
                             const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
     void enumLocalBridge(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
 
+    void createListener(quint16 port, bool enable, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError);
+    void enumListener(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void deleteListener(quint16 port, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError);
+    void enableListener(quint16 port, bool enable, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError);
+
+    void getServerCert(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void setServerCert(const QString &certBase64, const QString &keyBase64, const JsonRpcClient::ResultCallback &onResult,
+                        const JsonRpcClient::ErrorCallback &onError);
+    void regenerateServerCert(const QString &commonName, const JsonRpcClient::ResultCallback &onResult,
+                               const JsonRpcClient::ErrorCallback &onError);
+    void getServerCipher(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void setServerCipher(const QString &cipher, const JsonRpcClient::ResultCallback &onResult,
+                          const JsonRpcClient::ErrorCallback &onError);
+
+    void enumLogFile(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void readLogFile(const QString &filePath, quint32 offset, const JsonRpcClient::ResultCallback &onResult,
+                      const JsonRpcClient::ErrorCallback &onError);
+
+    void getSysLog(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
+    void setSysLog(int saveType, const QString &hostname, quint16 port, const JsonRpcClient::ResultCallback &onResult,
+                   const JsonRpcClient::ErrorCallback &onError);
+
 private:
     JsonRpcClient m_client;
 };

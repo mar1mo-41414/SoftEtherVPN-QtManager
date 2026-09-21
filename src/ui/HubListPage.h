@@ -10,7 +10,8 @@ class QLabel;
 class QPushButton;
 
 // D_SM_SERVER (仮想HUB一覧・基本操作) 相当の画面。
-// リスナー管理・証明書・クラスタリング等のサーバー全体設定は後続フェーズで追加する。
+// クラスタリング・IPsec/L2TP・OpenVPN/SSTP・DDNS・VPN Azure等のサーバー全体設定は
+// 後続フェーズで追加する。
 class HubListPage : public QWidget
 {
     Q_OBJECT
@@ -36,6 +37,8 @@ private slots:
     void onShowStatus();
     void onManageHub();
     void onManageLocalBridge();
+    void onManageListeners();
+    void onManageServerSettings();
     void onSelectionChanged();
 
 private:
@@ -58,5 +61,7 @@ private:
     QPushButton *m_statusButton;
     QPushButton *m_refreshButton;
     QPushButton *m_localBridgeButton;
+    QPushButton *m_listenerButton;
+    QPushButton *m_serverSettingsButton;
     QPushButton *m_disconnectButton;
 };

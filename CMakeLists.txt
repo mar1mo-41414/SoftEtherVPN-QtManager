@@ -71,6 +71,14 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/DhcpTableDialog.cpp
     src/ui/LocalBridgeDialog.h
     src/ui/LocalBridgeDialog.cpp
+    src/ui/CertInfoDialog.h
+    src/ui/CertInfoDialog.cpp
+    src/ui/ServerSettingsDialog.h
+    src/ui/ServerSettingsDialog.cpp
+    src/ui/ListenerDialog.h
+    src/ui/ListenerDialog.cpp
+    src/ui/LogFileListDialog.h
+    src/ui/LogFileListDialog.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
 )
