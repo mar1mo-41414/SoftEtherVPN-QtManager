@@ -1,14 +1,15 @@
 #pragma once
 
-#include "rpc/VpnServerRpc.h"
-
 #include <QMainWindow>
 
-class QTableWidget;
-class QLabel;
+class QStackedWidget;
+class ConnectionListPage;
+class HubListPage;
+class VpnServerRpc;
+class QJsonObject;
 
-// Phase 3で本格的な仮想HUB管理画面に置き換えるまでの、疎通確認用の最小メイン画面。
-// 接続直後に EnumHub を呼び、公式Managerの仮想HUB一覧グリッドと同じ列構成で表示する。
+// アプリのトップレベルウィンドウ。接続設定一覧画面と、接続後の仮想HUB一覧画面を
+// QStackedWidgetで切り替える (公式Managerが1つのウィンドウの中身を差し替えるのと同じ構成)。
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -17,14 +18,12 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
-    void setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo);
+private slots:
+    void onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo);
+    void onDisconnectRequested();
 
 private:
-    void showConnectDialog();
-    void refreshHubList();
-    void applyServerInfo(const QJsonObject &info);
-
-    VpnServerRpc *m_rpc = nullptr;
-    QTableWidget *m_hubTable;
-    QLabel *m_serverInfoLabel;
+    QStackedWidget *m_stack;
+    ConnectionListPage *m_connectionListPage;
+    HubListPage *m_hubListPage;
 };

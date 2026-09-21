@@ -45,3 +45,13 @@ Qt・GTK・wxWidgetsのようなクロスプラットフォームツールキッ
 ### 開発環境（確認済み）
 - macOS, Xcode Command Line Tools あり
 - Homebrew経由で Qt 6.11.1, CMake 4.4.3 導入済み
+
+## 2026-09-21 Phase 1〜2 実機確認
+
+実機テスト用サーバーは nux2 (Gitea稼働機) 上のSoftEther VPN Server。
+**ポート443は使えない** (Pangolinがリバースプロキシとして掌握しているため)。
+テストには **SE-Port の 5555** を使うこと。
+
+Phase 1 (JSON-RPCクライアント疎通、EnumHubによるHUB一覧表示) 、Phase 2 (接続設定の
+作成・編集・削除、パスワード入力プロンプト、実際の接続) とも nux2:5555 に対して
+動作確認済み。

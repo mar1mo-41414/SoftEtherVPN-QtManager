@@ -8,8 +8,11 @@
 - [x] **Phase 1: 通信層** — 汎用JSON-RPC 2.0クライアント（自己署名証明書許容、認証ヘッダー、
       エラーコード変換）。疎通確認用に `Test` / `GetServerInfo` / `GetServerStatus` を実装。
       実サーバー(nux2)への接続・`EnumHub`によるHUB一覧表示まで実機確認済み(2026-09-21)
-- [ ] **Phase 2: 接続管理** — 「新しい接続設定の作成」ダイアログ相当（接続設定の保存・一覧・
-      編集・削除）、ログイン、メイン画面の骨格（サーバー全体管理 / 仮想HUB管理モードの分岐）
+- [x] **Phase 2: 接続管理** — 「新しい接続設定の作成」ダイアログ相当（接続設定の保存・一覧・
+      編集・削除）、ログイン、メイン画面の骨格（サーバー全体管理 / 仮想HUB管理モードの分岐）。
+      D_SM_MAIN / D_SM_EDIT_SETTING の文言を再現。実機(nux2:5555)で作成・編集・削除・
+      パスワード入力接続まで確認済み(2026-09-21)。プロキシ経由接続(D_SM_EDIT_SETTINGの
+      STATIC8以降)は未対応、必要になったらPhase 2.1として追加
 - [ ] **Phase 3: 仮想HUB一覧・基本操作** — `EnumHub` / `CreateHub` / `SetHub` / `GetHub` /
       `DeleteHub` / `SetHubOnline` / `GetHubStatus`。公式の仮想HUB一覧グリッド
       （HUB名/状態/種類/ユーザー数/グループ数/セッション数...）を再現
@@ -36,4 +39,4 @@
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 1 完了・実機確認済み（nux2上のSoftEther VPN Server, Version 4.42 Build 9798）。次はPhase 2（接続設定の保存・一覧・編集・削除、メイン画面の骨格）。
+Phase 2 完了・実機確認済み（nux2:5555上のSoftEther VPN Server）。次はPhase 3（仮想HUB一覧のCRUDと状態表示、D_SM_SERVERダッシュボード）。

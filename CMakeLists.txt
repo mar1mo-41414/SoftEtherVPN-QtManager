@@ -17,8 +17,17 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/rpc/JsonRpcClient.cpp
     src/rpc/VpnServerRpc.h
     src/rpc/VpnServerRpc.cpp
-    src/ui/ConnectDialog.h
-    src/ui/ConnectDialog.cpp
+    src/model/ConnectionProfile.h
+    src/model/ConnectionProfileStore.h
+    src/model/ConnectionProfileStore.cpp
+    src/ui/ConnectionEditDialog.h
+    src/ui/ConnectionEditDialog.cpp
+    src/ui/PasswordPromptDialog.h
+    src/ui/PasswordPromptDialog.cpp
+    src/ui/ConnectionListPage.h
+    src/ui/ConnectionListPage.cpp
+    src/ui/HubListPage.h
+    src/ui/HubListPage.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
 )
