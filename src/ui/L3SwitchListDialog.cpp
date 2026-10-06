@@ -8,6 +8,7 @@
 #include <QAbstractItemView>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QJsonArray>
@@ -28,17 +29,25 @@ L3SwitchListDialog::L3SwitchListDialog(VpnServerRpc *rpc, QWidget *parent)
 
     auto *introLabel = new QLabel(
         tr("この VPN Server 内で動作している複数の仮想 HUB 間で仮想のレイヤ 3 スイッチを定義し、異なった IP ネットワーク間を"
-           "ルーティングすることができます。\n\n"
-           "仮想レイヤ 3 スイッチ機能は、ネットワークおよび IP ルーティングに関する詳しい知識をお持ちの方やネットワーク管理者の"
-           "ための機能です。通常の VPN 機能を使用する場合は、仮想レイヤ 3 スイッチ機能を使用する必要はありません。"),
+           "ルーティングすることができます。"),
         this);
     introLabel->setWordWrap(true);
+    // STATIC3 / STATIC2
+    auto *noticeGroup = new QGroupBox(tr("仮想レイヤ 3 スイッチ機能に関するご注意"), this);
+    auto *noticeLayout = new QVBoxLayout(noticeGroup);
+    auto *noticeLabel = new QLabel(
+        tr("仮想レイヤ 3 スイッチ機能は、ネットワークおよび IP ルーティングに関する詳しい知識をお持ちの方やネットワーク管理者のための機能です。通常の VPN 機能を使用する場合は、仮想レイヤ 3 スイッチ機能を使用する必要はありません。\n\n"
+           "仮想レイヤ 3 スイッチ機能を使用する場合は、IP ルーティングに関する十分な知識をお持ちの上で、ネットワークに与える影響を十分考慮してから設定してください。"),
+        this);
+    noticeLabel->setWordWrap(true);
+    noticeLayout->addWidget(noticeLabel);
 
     m_table = new QTableWidget(this);
     m_table->setColumnCount(4);
     // SM_L3_SW_COLUMN1〜4
     m_table->setHorizontalHeaderLabels({tr("レイヤ 3 スイッチ名"), tr("動作状況"), tr("インターフェイス数"), tr("ルーティングテーブル数")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -70,11 +79,16 @@ L3SwitchListDialog::L3SwitchListDialog(VpnServerRpc *rpc, QWidget *parent)
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(introLabel);
-    layout->addWidget(new QLabel(tr("定義されている仮想レイヤ 3 スイッチの一覧:"), this));
+    layout->addWidget(noticeGroup);
+    auto *listCaption = new QLabel(tr("定義されている仮想レイヤ 3 スイッチの一覧(L):"), this);
+    QFont boldFont = listCaption->font();
+    boldFont.setBold(true);
+    listCaption->setFont(boldFont);
+    layout->addWidget(listCaption);
     layout->addWidget(m_table);
     layout->addLayout(buttonLayout);
 
-    resize(680, 460);
+    resize(680, 560);
     onSelectionChanged();
     reload();
 }

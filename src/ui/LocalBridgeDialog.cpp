@@ -26,21 +26,27 @@ LocalBridgeDialog::LocalBridgeDialog(VpnServerRpc *rpc, QStringList hubNames, QW
 
     auto *titleLabel = new QLabel(
         tr("ローカルブリッジを使用すると、この VPN Server 上で動作する仮想 HUB と物理的な Ethernet デバイス "
-           "(LAN カード) との間でレイヤ 2 ブリッジ接続を構成することができます。"),
+           "(LAN カード) との間でレイヤ 2 ブリッジ接続を構成することができます。\n"
+           "また、システムに tap デバイス (仮想のネットワークインターフェイス) を作成し、仮想 HUB との間でブリッジ接続することもできます。(Linux 版のみサポート)"),
         this);
     titleLabel->setWordWrap(true);
 
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(3);
-    m_table->setHorizontalHeaderLabels({tr("仮想 HUB"), tr("デバイス名"), tr("状態")});
+    m_table->setColumnCount(4);
+    // SM_BRIDGE_COLUMN_1〜4
+    m_table->setHorizontalHeaderLabels({tr("番号"), tr("仮想 HUB 名"), tr("ブリッジ先 LAN カードまたは tap デバイス名"), tr("状態")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
 
     // B_DELETE
     auto *deleteButton = new QPushButton(tr("ローカルブリッジの削除(&D)"), this);
+    deleteButton->setEnabled(false);
     connect(deleteButton, &QPushButton::clicked, this, &LocalBridgeDialog::onDelete);
+    connect(m_table, &QTableWidget::itemSelectionChanged, this,
+            [this, deleteButton]() { deleteButton->setEnabled(!m_table->selectedItems().isEmpty()); });
     auto *tableButtonLayout = new QHBoxLayout;
     tableButtonLayout->addStretch();
     tableButtonLayout->addWidget(deleteButton);
@@ -74,9 +80,13 @@ LocalBridgeDialog::LocalBridgeDialog(VpnServerRpc *rpc, QStringList hubNames, QW
     addButtonLayout->addStretch();
     addButtonLayout->addWidget(addButton);
 
-    auto *newGroup = new QGroupBox(tr("新しいローカルブリッジの定義"), this);
+    auto *newGroup = new QGroupBox(tr("新しいローカルブリッジの定義(N):"), this);
     auto *newGroupLayout = new QVBoxLayout(newGroup);
+    newGroupLayout->addWidget(new QLabel(tr("ブリッジする仮想 HUB を選択するか、名前を入力してください。"), this));
     newGroupLayout->addLayout(newForm);
+    auto *bridgeNote = new QLabel(tr("※ 稼動中の任意の LAN カード との間でブリッジするときは、高負荷環境においてはブリッジ専用に LAN カードを用意することをお勧めします。"), this);
+    bridgeNote->setWordWrap(true);
+    newGroupLayout->addWidget(bridgeNote);
     newGroupLayout->addLayout(addButtonLayout);
 
     // IDCANCEL
@@ -91,9 +101,12 @@ LocalBridgeDialog::LocalBridgeDialog(VpnServerRpc *rpc, QStringList hubNames, QW
     layout->addWidget(m_table);
     layout->addLayout(tableButtonLayout);
     layout->addWidget(newGroup);
+    auto *footer = new QLabel(tr("最近システムに追加された LAN カードが表示されない場合は、コンピュータを再起動して再度この画面を開けば表示されます。"), this);
+    footer->setWordWrap(true);
+    layout->addWidget(footer);
     layout->addLayout(bottomLayout);
 
-    resize(620, 560);
+    resize(640, 620);
     loadEthernetList();
     reload();
 }
@@ -131,10 +144,13 @@ void LocalBridgeDialog::reload()
             m_table->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
                 const QJsonObject item = list.at(row).toObject();
-                m_table->setItem(row, 0, new QTableWidgetItem(item.value("HubNameLB_str").toString()));
-                m_table->setItem(row, 1, new QTableWidgetItem(item.value("DeviceName_str").toString()));
+                m_table->setItem(row, 0, new QTableWidgetItem(QString::number(row + 1)));
+                m_table->setItem(row, 1, new QTableWidgetItem(item.value("HubNameLB_str").toString()));
+                m_table->setItem(row, 2, new QTableWidgetItem(item.value("DeviceName_str").toString()));
+                // SM_BRIDGE_ONLINE / SM_BRIDGE_ERROR / SM_BRIDGE_OFFLINE
                 const bool active = item.value("Active_bool").toBool();
-                m_table->setItem(row, 2, new QTableWidgetItem(active ? tr("稼働中") : tr("停止中")));
+                const bool online = item.value("Online_bool").toBool();
+                m_table->setItem(row, 3, new QTableWidgetItem(online ? (active ? tr("動作中") : tr("エラー発生")) : tr("オフライン")));
             }
             m_table->resizeColumnsToContents();
         },
@@ -174,11 +190,11 @@ void LocalBridgeDialog::onDelete()
         return;
     }
     const int row = selected.first()->row();
-    const QString hubName = m_table->item(row, 0)->text();
-    const QString deviceName = m_table->item(row, 1)->text();
+    const QString hubName = m_table->item(row, 1)->text();
+    const QString deviceName = m_table->item(row, 2)->text();
 
     QMessageBox confirmBox(QMessageBox::Warning, tr("確認"),
-                            tr("ローカルブリッジ \"%1\" (%2) を削除します。よろしいですか?").arg(deviceName, hubName),
+                            tr("仮想 HUB \"%1\" からデバイス \"%2\" までのローカルブリッジを削除しますか?").arg(hubName, deviceName),
                             QMessageBox::NoButton, this);
     QPushButton *yesButton = confirmBox.addButton(tr("はい"), QMessageBox::YesRole);
     confirmBox.addButton(tr("いいえ"), QMessageBox::NoRole);
