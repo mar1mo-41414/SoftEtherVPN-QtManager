@@ -1,0 +1,18 @@
+SoftEtherVPN-QtManager
+Copyright 2026 The SoftEtherVPN-QtManager contributors.
+
+This product includes material derived from the SoftEther VPN project
+(https://github.com/SoftEtherVPN/SoftEtherVPN), licensed under the Apache License 2.0:
+
+  - docs/upstream-reference/strtable_ja.stb, strtable_en.stb
+      Copyright (c) all contributors on SoftEther VPN project in GitHub.
+      Copyright (c) Daiyuu Nobori, SoftEther Project at University of Tsukuba, and SoftEther Corporation
+  - docs/upstream-reference/jsonrpc-api-reference.md
+      (SoftEther VPN Server JSON-RPC API Suite Document, same copyright holders)
+  - src/util/CapsLabels.h, ErrorStrings.h, HubOptionTexts.h, PolicyTable.h
+      Generated from the string table above (UI wording follows the official
+      VPN Server Manager so that operators of the official tool find the same terms).
+
+SoftEther VPN is a trademark of its respective owners. This project is an independent
+reimplementation of a management GUI and is not affiliated with or endorsed by the
+SoftEther VPN project.

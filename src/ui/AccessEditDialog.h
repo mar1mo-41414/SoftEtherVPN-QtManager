@@ -31,7 +31,7 @@ public:
     QJsonObject toRpcParams() const;
 
     // 一覧の「内容」列に表示する公式Manager形式の文字列
-    // (例: "(ipv4) SrcIPv4=192.168.11.2/32, Protocol=TCP, SrcPort=99, DstPort=99")。
+    // (例: "(ipv4) SrcIPv4=192.0.2.2/32, Protocol=TCP, SrcPort=99, DstPort=99")。
     static QString describe(const QJsonObject &access);
 
 private slots:

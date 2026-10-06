@@ -20,8 +20,7 @@ AdminPasswordDialog::AdminPasswordDialog(VpnServerRpc *rpc, QWidget *parent)
     setWindowTitle(tr("管理者パスワードの設定"));
 
     auto *titleLabel = new QLabel(
-        tr("この VPN Server の管理者パスワードを設定します。新しいパスワードを入力してから [OK] をクリックしてください。\n"
-           "このパスワードは VPN Server 全体とすべての仮想 HUB に対する管理権限を有します。"),
+        tr("サーバーの管理者パスワードを設定します。新しいパスワードを入力してから [OK] をクリックしてください。"),
         this);
     titleLabel->setWordWrap(true);
 
@@ -30,8 +29,8 @@ AdminPasswordDialog::AdminPasswordDialog(VpnServerRpc *rpc, QWidget *parent)
     m_confirmEdit = new QLineEdit(this);
     m_confirmEdit->setEchoMode(QLineEdit::Password);
     auto *form = new QFormLayout;
-    form->addRow(tr("新しいパスワード(&P):"), m_passwordEdit);
-    form->addRow(tr("確認入力(&C):"), m_confirmEdit);
+    form->addRow(tr("新しいパスワード(P):"), m_passwordEdit);
+    form->addRow(tr("確認入力(C):"), m_confirmEdit);
 
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));

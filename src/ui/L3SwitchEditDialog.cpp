@@ -22,6 +22,7 @@ QTableWidget *makeTable(QWidget *parent, const QStringList &headers)
     table->setColumnCount(headers.size());
     table->setHorizontalHeaderLabels(headers);
     table->horizontalHeader()->setStretchLastSection(true);
+    table->verticalHeader()->hide();
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -41,7 +42,9 @@ L3SwitchEditDialog::L3SwitchEditDialog(VpnServerRpc *rpc, QString switchName, QW
     auto *introLabel = new QLabel(
         tr("1 つの仮想レイヤ 3 スイッチには、複数個の仮想インターフェイスとルーティングテーブルを定義することができます。\n"
            "仮想インターフェイスは仮想 HUB に関連付けられ、仮想 HUB が動作しているときに仮想 HUB 内で 1 台の IP ホストのように"
-           "動作します。"),
+           "動作します。複数の仮想 HUB に対してそれぞれ別々の IP ネットワークに所属する仮想インターフェイスが定義されているとき、"
+           "それらのインターフェイス間で IP ルーティングが自動的に行われます。\n\n"
+           "また、ルーティングテーブルを手動で設定して、より細かい経路設定を行うことも可能です。"),
         this);
     introLabel->setWordWrap(true);
 
@@ -87,10 +90,10 @@ L3SwitchEditDialog::L3SwitchEditDialog(VpnServerRpc *rpc, QString switchName, QW
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(introLabel);
-    layout->addWidget(new QLabel(tr("仮想インターフェイス一覧:"), this));
+    layout->addWidget(new QLabel(tr("仮想インターフェイス一覧(I):"), this));
     layout->addWidget(m_ifTable);
     layout->addLayout(ifButtons);
-    layout->addWidget(new QLabel(tr("ルーティングテーブル:"), this));
+    layout->addWidget(new QLabel(tr("ルーティングテーブル(R):"), this));
     layout->addWidget(m_routeTable);
     layout->addLayout(routeButtons);
     layout->addLayout(bottomButtons);

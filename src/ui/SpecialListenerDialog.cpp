@@ -17,6 +17,13 @@ SpecialListenerDialog::SpecialListenerDialog(VpnServerRpc *rpc, QWidget *parent)
     // D_SM_SPECIALLISTENER CAPTION
     setWindowTitle(tr("VPN over ICMP / DNS 機能の設定"));
 
+    // S_TITLE / S_1
+    auto *titleLabel = new QLabel(tr("VPN over ICMP / DNS 機能"), this);
+    QFont titleFont = titleLabel->font();
+    titleFont.setBold(true);
+    titleFont.setPointSize(titleFont.pointSize() + 4);
+    titleLabel->setFont(titleFont);
+
     auto *introLabel = new QLabel(
         tr("ファイアウォールやルータ等の故障や過負荷、設定ミス等により TCP/IP 通信が遮断されている環境のネットワークからでも、"
            "ICMP (Ping) または DNS パケットの通信が可能であれば、この VPN Server との間で VPN 通信を行うことができます。"
@@ -25,8 +32,8 @@ SpecialListenerDialog::SpecialListenerDialog(VpnServerRpc *rpc, QWidget *parent)
     introLabel->setWordWrap(true);
 
     // R_OVER_ICMP / R_OVER_DNS
-    m_icmpCheck = new QCheckBox(tr("VPN over ICMP サーバー機能を有効にする(&I)"), this);
-    m_dnsCheck = new QCheckBox(tr("VPN over DNS サーバー機能を有効にする (UDP ポート 53 を使用します)(&D)"), this);
+    m_icmpCheck = new QCheckBox(tr("VPN over ICMP サーバー機能を有効にする"), this);
+    m_dnsCheck = new QCheckBox(tr("VPN over DNS サーバー機能を有効にする (UDP ポート 53 を使用します)"), this);
 
     auto *versionLabel = new QLabel(tr("接続元の VPN Client または VPN Bridge は内部バージョン 4.0 以降が必要です。"), this);
     versionLabel->setWordWrap(true);
@@ -43,6 +50,7 @@ SpecialListenerDialog::SpecialListenerDialog(VpnServerRpc *rpc, QWidget *parent)
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     auto *layout = new QVBoxLayout(this);
+    layout->addWidget(titleLabel);
     layout->addWidget(introLabel);
     layout->addWidget(m_icmpCheck);
     layout->addWidget(m_dnsCheck);

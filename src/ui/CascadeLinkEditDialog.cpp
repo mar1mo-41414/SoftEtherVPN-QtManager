@@ -186,7 +186,6 @@ CascadeLinkEditDialog::CascadeLinkEditDialog(bool isNew, QWidget *parent)
     auto *retrySpan = new QLineEdit(QStringLiteral("15"), this);
     auto *infiniteCheck = new QCheckBox(tr("無限に再接続を試行する (常時接続)(I)"), this);
     infiniteCheck->setChecked(true);
-    m_noTls1Check = new QCheckBox(tr("SSL 3.0 を使用する(1)"), this);
     auto *advancedButton = new QPushButton(tr("高度な通信設定(&N)..."), this);
     auto *retryGrid = new QGridLayout;
     retryGrid->addWidget(new QLabel(tr("再接続回数(C):"), this), 0, 0, Qt::AlignRight);
@@ -196,7 +195,7 @@ CascadeLinkEditDialog::CascadeLinkEditDialog(bool isNew, QWidget *parent)
     retryGrid->addWidget(retrySpan, 1, 1);
     retryGrid->addWidget(new QLabel(tr("秒"), this), 1, 2);
     auto *advancedRow = new QHBoxLayout;
-    advancedRow->addWidget(m_noTls1Check, 1);
+    advancedRow->addStretch();
     advancedRow->addWidget(advancedButton);
     for (QWidget *w : QList<QWidget *>{retryCheck, retryNum, retrySpan, infiniteCheck}) {
         w->setEnabled(false);
@@ -328,7 +327,6 @@ void CascadeLinkEditDialog::setValues(const QJsonObject &link)
         m_clientKey = QByteArray::fromBase64(link.value("ClientK_bin").toString().toLatin1());
     }
 
-    m_noTls1Check->setChecked(link.value("NoTls1_bool").toBool());
     m_maxConnection = link.value("MaxConnection_u32").toInt(8);
     m_interval = link.value("AdditionalConnectionInterval_u32").toInt(1);
     m_disconnectSpan = link.value("ConnectionDisconnectSpan_u32").toInt();
@@ -378,7 +376,6 @@ QJsonObject CascadeLinkEditDialog::toRpcParams() const
         params["ClientK_bin"] = QString::fromLatin1(m_clientKey.toBase64());
     }
 
-    params["NoTls1_bool"] = m_noTls1Check->isChecked();
     params["MaxConnection_u32"] = m_maxConnection;
     params["AdditionalConnectionInterval_u32"] = m_interval;
     params["ConnectionDisconnectSpan_u32"] = m_disconnectSpan;

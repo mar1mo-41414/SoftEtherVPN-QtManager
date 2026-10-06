@@ -27,9 +27,12 @@ DhcpTableDialog::DhcpTableDialog(VpnServerRpc *rpc, QString hubName, QWidget *pa
     titleLabel->setWordWrap(true);
 
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(5);
-    m_table->setHorizontalHeaderLabels({tr("IP アドレス"), tr("MAC アドレス"), tr("ホスト名"), tr("リース時刻"), tr("期限")});
+    m_table->setColumnCount(6);
+    // DHCP_* の並び
+    m_table->setHorizontalHeaderLabels(
+        {tr("ID"), tr("リース開始日時"), tr("リース期限"), tr("MAC アドレス"), tr("割り当て IP"), tr("クライアントホスト名")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
 
@@ -61,11 +64,12 @@ void DhcpTableDialog::reload()
             m_table->setRowCount(dhcpTable.size());
             for (int row = 0; row < dhcpTable.size(); ++row) {
                 const QJsonObject entry = dhcpTable.at(row).toObject();
-                m_table->setItem(row, 0, new QTableWidgetItem(entry.value("IpAddress_ip").toString()));
-                m_table->setItem(row, 1, new QTableWidgetItem(SoftEtherLabels::macAddress(entry.value("MacAddress_bin").toString())));
-                m_table->setItem(row, 2, new QTableWidgetItem(entry.value("Hostname_str").toString()));
-                m_table->setItem(row, 3, new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("LeasedTime_dt").toString())));
-                m_table->setItem(row, 4, new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("ExpireTime_dt").toString())));
+                m_table->setItem(row, 0, new QTableWidgetItem(QString::number(entry.value("Id_u32").toInt())));
+                m_table->setItem(row, 1, new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("LeasedTime_dt").toString())));
+                m_table->setItem(row, 2, new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("ExpireTime_dt").toString())));
+                m_table->setItem(row, 3, new QTableWidgetItem(SoftEtherLabels::macAddress(entry.value("MacAddress_bin").toString())));
+                m_table->setItem(row, 4, new QTableWidgetItem(entry.value("IpAddress_ip").toString()));
+                m_table->setItem(row, 5, new QTableWidgetItem(entry.value("Hostname_str").toString()));
             }
             m_table->resizeColumnsToContents();
         }),

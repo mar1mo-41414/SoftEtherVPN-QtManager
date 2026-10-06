@@ -1,6 +1,7 @@
 #include "SecureNatDialog.h"
 #include "DhcpTableDialog.h"
 #include "NatTableDialog.h"
+#include "InfoTableDialog.h"
 #include "SecureNatOptionDialog.h"
 
 #include "util/RpcUiHelpers.h"
@@ -187,28 +188,31 @@ void SecureNatDialog::onShowStatus()
     m_rpc->getSecureNATStatus(
         m_hubName,
         RpcUi::guarded(this, [this](const QJsonObject &status) {
-            auto *dialog = new QDialog(this);
+            // NM_STATUS_* (公式の「SecureNAT の動作状況」と同じ項目/値の表)
+            auto *dialog = new InfoTableDialog(
+                tr("SecureNAT の動作状況"), tr("SecureNAT の動作状況"), /*refreshable=*/true,
+                [rpc = m_rpc, hubName = m_hubName](const InfoTableDialog::Deliver &deliver, const InfoTableDialog::Fail &fail) {
+                    rpc->getSecureNATStatus(
+                        hubName,
+                        [deliver, hubName](const QJsonObject &st) {
+                            const auto sessions = [&](const char *key) { return tr("%1 セッション").arg(st.value(key).toInt()); };
+                            const auto yesNo = [](bool v) { return v ? tr("はい") : tr("いいえ"); };
+                            InfoTable::Rows rows;
+                            rows << qMakePair(tr("仮想 HUB 名"), hubName);
+                            rows << qMakePair(tr("NAT TCP/IP セッション数"), sessions("NumTcpSessions_u32"));
+                            rows << qMakePair(tr("NAT UDP/IP セッション数"), sessions("NumUdpSessions_u32"));
+                            rows << qMakePair(tr("NAT ICMP セッション数"), sessions("NumIcmpSessions_u32"));
+                            rows << qMakePair(tr("NAT DNS セッション数"), sessions("NumDnsSessions_u32"));
+                            rows << qMakePair(tr("割り当て済み DHCP クライアント数"),
+                                              tr("%1 クライアント").arg(st.value("NumDhcpClients_u32").toInt()));
+                            rows << qMakePair(tr("カーネルモード NAT で動作中"), yesNo(st.value("IsKernelMode_bool").toBool()));
+                            rows << qMakePair(tr("Raw IP モード NAT で動作中"), yesNo(st.value("IsRawIpMode_bool").toBool()));
+                            deliver(rows);
+                        },
+                        [fail](const RpcError &error) { fail(error); });
+                },
+                this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
-            dialog->setWindowTitle(tr("SecureNAT の動作状況"));
-
-            auto *form = new QFormLayout;
-            form->addRow(tr("TCP セッション数:"), new QLabel(QString::number(status.value("NumTcpSessions_u32").toInt()), dialog));
-            form->addRow(tr("UDP セッション数:"), new QLabel(QString::number(status.value("NumUdpSessions_u32").toInt()), dialog));
-            form->addRow(tr("ICMP セッション数:"), new QLabel(QString::number(status.value("NumIcmpSessions_u32").toInt()), dialog));
-            form->addRow(tr("DNS セッション数:"), new QLabel(QString::number(status.value("NumDnsSessions_u32").toInt()), dialog));
-            form->addRow(tr("DHCP クライアント数:"), new QLabel(QString::number(status.value("NumDhcpClients_u32").toInt()), dialog));
-            form->addRow(tr("カーネルモード:"), new QLabel(status.value("IsKernelMode_bool").toBool() ? tr("はい") : tr("いいえ"), dialog));
-            form->addRow(tr("Raw IP モード:"), new QLabel(status.value("IsRawIpMode_bool").toBool() ? tr("はい") : tr("いいえ"), dialog));
-
-            auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, dialog);
-            buttonBox->button(QDialogButtonBox::Close)->setText(tr("閉じる(&X)"));
-            connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-            connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-
-            auto *dialogLayout = new QVBoxLayout(dialog);
-            dialogLayout->addLayout(form);
-            dialogLayout->addWidget(buttonBox);
-
             dialog->open();
         }),
         RpcUi::guarded(this, [this](const RpcError &error) {

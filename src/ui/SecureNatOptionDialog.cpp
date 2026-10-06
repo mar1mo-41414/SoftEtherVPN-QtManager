@@ -16,6 +16,22 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
+namespace {
+
+// 未設定のIPは、サーバーが "::" や "0.0.0.0" で返す。画面上は空欄として扱う (公式Managerと同じ)。
+QString ipForDisplay(const QString &ip)
+{
+    return (ip == QStringLiteral("::") || ip == QStringLiteral("0.0.0.0")) ? QString() : ip;
+}
+
+QString ipForRpc(const QString &text)
+{
+    const QString trimmed = text.trimmed();
+    return trimmed.isEmpty() ? QStringLiteral("0.0.0.0") : trimmed;
+}
+
+} // namespace
+
 SecureNatOptionDialog::SecureNatOptionDialog(const QString &hubName, QWidget *parent)
     : QDialog(parent)
 {
@@ -216,9 +232,9 @@ void SecureNatOptionDialog::setValues(const QJsonObject &option)
     m_dhcpMaskEdit->setText(option.value("DhcpSubnetMask_ip").toString());
     const int expire = option.value("DhcpExpireTimeSpan_u32").toInt();
     m_leaseExpireSpin->setValue(expire > 0 ? expire : 7200);
-    m_gatewayEdit->setText(option.value("DhcpGatewayAddress_ip").toString());
-    m_dns1Edit->setText(option.value("DhcpDnsServerAddress_ip").toString());
-    m_dns2Edit->setText(option.value("DhcpDnsServerAddress2_ip").toString());
+    m_gatewayEdit->setText(ipForDisplay(option.value("DhcpGatewayAddress_ip").toString()));
+    m_dns1Edit->setText(ipForDisplay(option.value("DhcpDnsServerAddress_ip").toString()));
+    m_dns2Edit->setText(ipForDisplay(option.value("DhcpDnsServerAddress2_ip").toString()));
     m_domainEdit->setText(option.value("DhcpDomainName_str").toString());
     updateState();
 }
@@ -241,9 +257,9 @@ QJsonObject SecureNatOptionDialog::toRpcParams() const
     params["DhcpLeaseIPEnd_ip"] = m_leaseEndEdit->text().trimmed();
     params["DhcpSubnetMask_ip"] = m_dhcpMaskEdit->text().trimmed();
     params["DhcpExpireTimeSpan_u32"] = m_leaseExpireSpin->value();
-    params["DhcpGatewayAddress_ip"] = m_gatewayEdit->text().trimmed();
-    params["DhcpDnsServerAddress_ip"] = m_dns1Edit->text().trimmed();
-    params["DhcpDnsServerAddress2_ip"] = m_dns2Edit->text().trimmed();
+    params["DhcpGatewayAddress_ip"] = ipForRpc(m_gatewayEdit->text());
+    params["DhcpDnsServerAddress_ip"] = ipForRpc(m_dns1Edit->text());
+    params["DhcpDnsServerAddress2_ip"] = ipForRpc(m_dns2Edit->text());
     params["DhcpDomainName_str"] = m_domainEdit->text().trimmed();
     params["ApplyDhcpPushRoutes_bool"] = !m_pushRoutes.isEmpty();
     params["DhcpPushRoutes_str"] = m_pushRoutes;

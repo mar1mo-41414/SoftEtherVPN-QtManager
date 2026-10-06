@@ -72,8 +72,6 @@ private:
     QByteArray m_originalHashed;
     bool m_isNew;
 
-    QCheckBox *m_noTls1Check;
-
     // 高度な通信設定
     int m_maxConnection = 8;
     int m_interval = 1;
