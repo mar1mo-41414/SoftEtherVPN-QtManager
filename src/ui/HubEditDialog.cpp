@@ -1,5 +1,7 @@
 #include "HubEditDialog.h"
 
+#include "util/DialogSizing.h"
+
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -76,7 +78,7 @@ HubEditDialog::HubEditDialog(bool isNew, QWidget *parent)
     layout->addWidget(stateGroup);
     layout->addWidget(buttonBox);
 
-    resize(420, sizeHint().height());
+    DialogSizing::fitToWidth(this, 420);
 }
 
 void HubEditDialog::setValues(const QString &hubName, bool online, bool noEnum, quint32 maxSession)

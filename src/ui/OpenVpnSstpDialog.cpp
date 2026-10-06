@@ -3,6 +3,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QFile>
@@ -88,7 +90,7 @@ OpenVpnSstpDialog::OpenVpnSstpDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(ipsecButton);
     layout->addWidget(buttonBox);
 
-    resize(560, sizeHint().height());
+    DialogSizing::fitToWidth(this, 560);
 
     m_rpc->call(
         QStringLiteral("GetOpenVpnSstpConfig"), {},

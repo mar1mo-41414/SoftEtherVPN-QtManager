@@ -3,6 +3,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QGroupBox>
@@ -74,7 +76,7 @@ AzureDialog::AzureDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(hostGroup);
     layout->addWidget(buttonBox);
 
-    resize(560, sizeHint().height());
+    DialogSizing::fitToWidth(this, 560);
     reload();
 }
 

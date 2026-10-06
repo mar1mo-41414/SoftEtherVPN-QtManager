@@ -29,8 +29,6 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/ConnectionListPage.cpp
     src/ui/HubEditDialog.h
     src/ui/HubEditDialog.cpp
-    src/ui/HubStatusDialog.h
-    src/ui/HubStatusDialog.cpp
     src/ui/HubListPage.h
     src/ui/HubListPage.cpp
     src/ui/HubManagementPage.h
@@ -75,8 +73,8 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/CertInfoDialog.cpp
     src/ui/ServerSettingsDialog.h
     src/ui/ServerSettingsDialog.cpp
-    src/ui/ListenerDialog.h
-    src/ui/ListenerDialog.cpp
+    src/ui/ListenerPanel.h
+    src/ui/ListenerPanel.cpp
     src/ui/LogFileListDialog.h
     src/ui/LogFileListDialog.cpp
     src/util/RpcUiHelpers.h
@@ -110,6 +108,17 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/SpecialListenerDialog.cpp
     src/ui/AdminPasswordDialog.h
     src/ui/AdminPasswordDialog.cpp
+    src/ui/InfoTableDialog.h
+    src/ui/InfoTableDialog.cpp
+    src/ui/ServerInfoDialogs.h
+    src/ui/ServerInfoDialogs.cpp
+    src/ui/TcpConnectionListDialog.h
+    src/ui/TcpConnectionListDialog.cpp
+    src/ui/ConfigEditDialog.h
+    src/ui/ConfigEditDialog.cpp
+    src/util/CapsLabels.h
+    src/ui/ProxySettingsDialog.h
+    src/ui/ProxySettingsDialog.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
 )

@@ -3,6 +3,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -84,7 +86,7 @@ IPsecSettingsDialog::IPsecSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(pskGroup);
     layout->addWidget(buttonBox);
 
-    resize(560, sizeHint().height());
+    DialogSizing::fitToWidth(this, 560);
 
     m_rpc->call(
         QStringLiteral("GetIPsecServices"), {},

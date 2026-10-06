@@ -19,15 +19,17 @@ public:
     explicit ConnectionListPage(QWidget *parent = nullptr);
 
 signals:
+    void quitRequested();
     // 接続に成功したら発行される。rpcの所有権は受け取り側(MainWindow)に移る。
-    // hubAdminMode==trueの場合、hubNameが管理対象の仮想HUB名になる。
-    void connected(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode, const QString &hubName);
+    // profile.hubAdminMode==trueの場合、profile.hubNameが管理対象の仮想HUB名になる。
+    void connected(VpnServerRpc *rpc, const QJsonObject &serverInfo, const ConnectionProfile &profile);
 
 private slots:
     void onNewSetting();
     void onEditSetting();
     void onDeleteSetting();
     void onConnect();
+    void onAbout();
 
 private:
     void reloadTable();

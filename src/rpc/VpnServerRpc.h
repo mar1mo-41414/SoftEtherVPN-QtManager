@@ -14,6 +14,10 @@ public:
     explicit VpnServerRpc(QObject *parent = nullptr);
 
     void connectToServer(const QString &host, quint16 port, const QString &hubName, const QString &password);
+    void setProxy(int type, const QString &host, quint16 port, const QString &user, const QString &password)
+    {
+        m_client.setProxy(type, host, port, user, password);
+    }
     void updatePassword(const QString &password) { m_client.setPassword(password); }
 
     // 個別のラッパーを持たないAPIを呼ぶための汎用エントリ。メソッド名・パラメータは

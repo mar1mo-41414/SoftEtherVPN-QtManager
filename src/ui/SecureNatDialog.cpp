@@ -3,6 +3,8 @@
 #include "NatTableDialog.h"
 #include "SecureNatOptionDialog.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -74,7 +76,7 @@ SecureNatDialog::SecureNatDialog(VpnServerRpc *rpc, QString hubName, QWidget *pa
     layout->addWidget(statusGroup);
     layout->addLayout(bottomLayout);
 
-    resize(560, sizeHint().height());
+    DialogSizing::fitToWidth(this, 560);
     refreshEnabledState();
 }
 

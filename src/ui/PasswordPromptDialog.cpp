@@ -1,5 +1,7 @@
 #include "PasswordPromptDialog.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QLineEdit>
@@ -29,7 +31,7 @@ PasswordPromptDialog::PasswordPromptDialog(const QString &targetLabel, QWidget *
     layout->addLayout(form);
     layout->addWidget(buttonBox);
 
-    resize(360, sizeHint().height());
+    DialogSizing::fitToWidth(this, 360);
 }
 
 QString PasswordPromptDialog::password() const

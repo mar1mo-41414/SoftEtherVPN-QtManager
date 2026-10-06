@@ -2,6 +2,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QLabel>
@@ -48,7 +50,7 @@ SpecialListenerDialog::SpecialListenerDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(warningLabel);
     layout->addWidget(buttonBox);
 
-    resize(520, sizeHint().height());
+    DialogSizing::fitToWidth(this, 520);
 
     m_rpc->call(
         QStringLiteral("GetSpecialListener"), {},

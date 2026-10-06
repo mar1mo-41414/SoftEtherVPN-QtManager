@@ -6,6 +6,7 @@
 
 class QLabel;
 class QPushButton;
+class QTableWidget;
 
 // 公式Manager「仮想HUBの管理」(D_SM_HUB) 相当。ユーザー/グループ/セッション/
 // アクセスリスト/カスケード接続/SecureNAT/ログファイル一覧管理への入口。
@@ -33,9 +34,11 @@ private slots:
     void onManageSecureNAT();
     void onManageLogFiles();
     void onEditProperty();
+    void refreshStatus();
 
 private:
     VpnServerRpc *m_rpc = nullptr;
     QString m_hubName;
     QLabel *m_titleLabel;
+    QTableWidget *m_statusTable;
 };

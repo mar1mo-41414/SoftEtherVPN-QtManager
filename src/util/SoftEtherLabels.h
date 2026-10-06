@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QLocale>
 #include <QString>
 #include <QStringList>
 
@@ -143,13 +144,40 @@ inline QString macIpLocation(bool remoteItem, const QString &remoteHostname)
                        : QCoreApplication::translate("SoftEtherLabels", "このサーバー上");
 }
 
+// 公式Managerの日時表記: "2026年 9月21日(月) 11時 7分 3秒"
 inline QString dateTime(const QString &isoString)
 {
     const QDateTime dt = QDateTime::fromString(isoString, Qt::ISODateWithMs);
     if (!dt.isValid()) {
         return QStringLiteral("-");
     }
-    return dt.toLocalTime().toString(QStringLiteral("yyyy/MM/dd HH:mm:ss"));
+    const QDateTime local = dt.toLocalTime();
+    static const char *kDays[] = {"月", "火", "水", "木", "金", "土", "日"};
+    return QStringLiteral("%1年 %2月%3日(%4) %5時 %6分 %7秒")
+        .arg(local.date().year())
+        .arg(local.date().month())
+        .arg(local.date().day())
+        .arg(QString::fromUtf8(kDays[local.date().dayOfWeek() - 1]))
+        .arg(local.time().hour())
+        .arg(local.time().minute())
+        .arg(local.time().second());
+}
+
+// 3桁区切りの整数表記 (例: 17,958,301,425)
+inline QString number(double value)
+{
+    return QLocale(QLocale::English).toString(static_cast<qlonglong>(value));
+}
+
+// "%S パケット" / "%S バイト" (SM_ST_NUM_PACKET_STR / SM_ST_SIZE_BYTE_STR)
+inline QString packets(double value)
+{
+    return QCoreApplication::translate("SoftEtherLabels", "%1 パケット").arg(number(value));
+}
+
+inline QString bytes(double value)
+{
+    return QCoreApplication::translate("SoftEtherLabels", "%1 バイト").arg(number(value));
 }
 
 } // namespace SoftEtherLabels

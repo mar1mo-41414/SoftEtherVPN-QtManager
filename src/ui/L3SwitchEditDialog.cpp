@@ -87,10 +87,10 @@ L3SwitchEditDialog::L3SwitchEditDialog(VpnServerRpc *rpc, QString switchName, QW
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(introLabel);
-    layout->addWidget(new QLabel(tr("仮想インターフェイス一覧(&I):"), this));
+    layout->addWidget(new QLabel(tr("仮想インターフェイス一覧:"), this));
     layout->addWidget(m_ifTable);
     layout->addLayout(ifButtons);
-    layout->addWidget(new QLabel(tr("ルーティングテーブル(&R):"), this));
+    layout->addWidget(new QLabel(tr("ルーティングテーブル:"), this));
     layout->addWidget(m_routeTable);
     layout->addLayout(routeButtons);
     layout->addLayout(bottomButtons);

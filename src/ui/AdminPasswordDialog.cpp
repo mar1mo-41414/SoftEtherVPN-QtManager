@@ -2,6 +2,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QLabel>
@@ -42,7 +44,7 @@ AdminPasswordDialog::AdminPasswordDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addLayout(form);
     layout->addWidget(buttonBox);
 
-    resize(480, sizeHint().height());
+    DialogSizing::fitToWidth(this, 480);
 }
 
 void AdminPasswordDialog::onOk()

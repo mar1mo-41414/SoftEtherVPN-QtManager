@@ -1,5 +1,7 @@
 #include "L3TableAddDialog.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -54,7 +56,7 @@ L3TableAddDialog::L3TableAddDialog(QWidget *parent)
     layout->addWidget(noteLabel);
     layout->addWidget(buttonBox);
 
-    resize(520, sizeHint().height());
+    DialogSizing::fitToWidth(this, 520);
 }
 
 QJsonObject L3TableAddDialog::toRpcParams() const

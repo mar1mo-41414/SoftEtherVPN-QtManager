@@ -5,6 +5,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -141,7 +143,7 @@ ServerSettingsDialog::ServerSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addLayout(extraButtons);
     layout->addWidget(buttonBox);
 
-    resize(480, sizeHint().height());
+    DialogSizing::fitToWidth(this, 480);
     reload();
 }
 

@@ -1,5 +1,7 @@
 #include "GroupEditDialog.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QLineEdit>
@@ -34,7 +36,7 @@ GroupEditDialog::GroupEditDialog(bool isNew, QWidget *parent)
     layout->addLayout(form);
     layout->addWidget(buttonBox);
 
-    resize(380, sizeHint().height());
+    DialogSizing::fitToWidth(this, 380);
 }
 
 void GroupEditDialog::setValues(const QString &name, const QString &realname, const QString &note)

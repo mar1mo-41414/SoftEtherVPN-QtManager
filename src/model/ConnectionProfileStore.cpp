@@ -46,6 +46,11 @@ QList<ConnectionProfile> ConnectionProfileStore::loadAll()
         if (!profile.noSavePassword) {
             profile.password = deobfuscate(settings.value("password").toByteArray());
         }
+        profile.proxyType = settings.value("proxyType", 0).toInt();
+        profile.proxyHost = settings.value("proxyHost").toString();
+        profile.proxyPort = static_cast<quint16>(settings.value("proxyPort", 8080).toUInt());
+        profile.proxyUser = settings.value("proxyUser").toString();
+        profile.proxyPassword = deobfuscate(settings.value("proxyPassword").toByteArray());
 
         profiles.append(profile);
     }
@@ -70,6 +75,11 @@ void ConnectionProfileStore::saveAll(const QList<ConnectionProfile> &profiles)
         settings.setValue("hubName", profile.hubName);
         settings.setValue("noSavePassword", profile.noSavePassword);
         settings.setValue("password", profile.noSavePassword ? QByteArray() : obfuscate(profile.password));
+        settings.setValue("proxyType", profile.proxyType);
+        settings.setValue("proxyHost", profile.proxyHost);
+        settings.setValue("proxyPort", profile.proxyPort);
+        settings.setValue("proxyUser", profile.proxyUser);
+        settings.setValue("proxyPassword", obfuscate(profile.proxyPassword));
     }
     settings.endArray();
 }

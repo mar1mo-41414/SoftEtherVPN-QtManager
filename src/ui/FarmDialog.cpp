@@ -2,6 +2,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -91,7 +93,7 @@ FarmDialog::FarmDialog(VpnServerRpc *rpc, QString serverName, QWidget *parent)
     layout->addWidget(warnLabel);
     layout->addWidget(buttonBox);
 
-    resize(560, sizeHint().height());
+    DialogSizing::fitToWidth(this, 560);
     onModeChanged();
 
     m_rpc->call(

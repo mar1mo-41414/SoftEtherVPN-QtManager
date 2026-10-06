@@ -2,6 +2,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -63,7 +65,7 @@ EtherIpIdEditDialog::EtherIpIdEditDialog(VpnServerRpc *rpc, bool isNew, QWidget 
     layout->addWidget(userHint);
     layout->addWidget(buttonBox);
 
-    resize(520, sizeHint().height());
+    DialogSizing::fitToWidth(this, 520);
 }
 
 void EtherIpIdEditDialog::setValues(const QJsonObject &setting)

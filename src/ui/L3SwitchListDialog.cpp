@@ -3,6 +3,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QAbstractItemView>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -68,7 +70,7 @@ L3SwitchListDialog::L3SwitchListDialog(VpnServerRpc *rpc, QWidget *parent)
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(introLabel);
-    layout->addWidget(new QLabel(tr("定義されている仮想レイヤ 3 スイッチの一覧(&L):"), this));
+    layout->addWidget(new QLabel(tr("定義されている仮想レイヤ 3 スイッチの一覧:"), this));
     layout->addWidget(m_table);
     layout->addLayout(buttonLayout);
 
@@ -139,7 +141,7 @@ void L3SwitchListDialog::onAdd()
     layout->addWidget(hint);
     layout->addLayout(form);
     layout->addWidget(buttonBox);
-    nameDialog.resize(460, nameDialog.sizeHint().height());
+    DialogSizing::fitToWidth(&nameDialog, 460);
 
     if (nameDialog.exec() != QDialog::Accepted || nameEdit->text().trimmed().isEmpty()) {
         return;

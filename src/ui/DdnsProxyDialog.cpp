@@ -2,6 +2,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -61,7 +63,7 @@ DdnsProxyDialog::DdnsProxyDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(typeGroup);
     layout->addWidget(buttonBox);
 
-    resize(440, sizeHint().height());
+    DialogSizing::fitToWidth(this, 440);
     onTypeChanged();
 
     m_rpc->call(

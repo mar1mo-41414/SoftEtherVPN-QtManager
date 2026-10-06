@@ -2,6 +2,8 @@
 
 #include <QMainWindow>
 
+#include "model/ConnectionProfile.h"
+
 class QStackedWidget;
 class ConnectionListPage;
 class HubListPage;
@@ -20,12 +22,15 @@ public:
     ~MainWindow() override;
 
 private slots:
-    void onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo, bool hubAdminMode, const QString &hubName);
+    void onConnected(VpnServerRpc *rpc, const QJsonObject &serverInfo, const ConnectionProfile &profile);
     void onDisconnectRequested();
     void onManageHubRequested(VpnServerRpc *rpc, const QString &hubName);
     void onHubManagementBackRequested();
 
 private:
+    void fitToCurrentPage();
+    void updateTitle();
+
     QStackedWidget *m_stack;
     ConnectionListPage *m_connectionListPage;
     HubListPage *m_hubListPage;
@@ -34,4 +39,7 @@ private:
     // 仮想HUB管理モードでの接続時は仮想HUB一覧をスキップして直接この画面に入るため、
     // 「閉じる」で戻る先を憶えておく必要がある。
     bool m_hubManagementEnteredDirectly = false;
+
+    QString m_settingName;
+    QString m_currentHubName;
 };

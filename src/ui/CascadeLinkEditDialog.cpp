@@ -1,5 +1,7 @@
 #include "CascadeLinkEditDialog.h"
 
+#include "util/DialogSizing.h"
+
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -76,7 +78,7 @@ CascadeLinkEditDialog::CascadeLinkEditDialog(bool isNew, QWidget *parent)
     layout->addWidget(optionGroup);
     layout->addWidget(buttonBox);
 
-    resize(440, sizeHint().height());
+    DialogSizing::fitToWidth(this, 440);
 }
 
 void CascadeLinkEditDialog::setValues(const QJsonObject &link)

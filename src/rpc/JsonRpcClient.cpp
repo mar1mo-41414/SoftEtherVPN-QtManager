@@ -2,6 +2,7 @@
 
 #include <QJsonDocument>
 #include <QNetworkAccessManager>
+#include <QNetworkProxy>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSslConfiguration>
@@ -20,6 +21,16 @@ void JsonRpcClient::configure(const QString &host, quint16 port, const QString &
     m_port = port;
     m_hubName = hubName;
     m_password = password;
+}
+
+void JsonRpcClient::setProxy(int type, const QString &host, quint16 port, const QString &user, const QString &password)
+{
+    if (type != 1 && type != 2) {
+        m_manager->setProxy(QNetworkProxy::NoProxy);
+        return;
+    }
+    QNetworkProxy proxy(type == 1 ? QNetworkProxy::HttpProxy : QNetworkProxy::Socks5Proxy, host, port, user, password);
+    m_manager->setProxy(proxy);
 }
 
 void JsonRpcClient::call(const QString &method, const QJsonObject &params,

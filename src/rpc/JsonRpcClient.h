@@ -33,6 +33,9 @@ public:
     // 接続中に管理パスワードが変更された場合に、以降のリクエストの認証ヘッダーを更新する。
     void setPassword(const QString &password) { m_password = password; }
 
+    // 管理接続を経由させるプロキシ。type: 0=直接 1=HTTP 2=SOCKS5。
+    void setProxy(int type, const QString &host, quint16 port, const QString &user, const QString &password);
+
     void call(const QString &method, const QJsonObject &params,
               const ResultCallback &onResult, const ErrorCallback &onError);
 

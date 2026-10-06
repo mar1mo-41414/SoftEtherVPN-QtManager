@@ -5,6 +5,9 @@
 #include "model/ConnectionProfileStore.h"
 
 #include <QAbstractItemView>
+#include <QApplication>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -18,6 +21,16 @@ ConnectionListPage::ConnectionListPage(QWidget *parent)
     : QWidget(parent)
 {
     m_profiles = ConnectionProfileStore::loadAll();
+
+    // 公式Managerの接続一覧 (D_SM_MAIN): 上部バナー、「接続設定」グループ、その下に補助ボタン群。
+    // バナー画像・アイコン類は再現せず、配置だけを合わせている。
+    auto *banner = new QLabel(tr("SoftEther VPN Server Manager"), this);
+    QFont bannerFont = banner->font();
+    bannerFont.setBold(true);
+    bannerFont.setPointSize(bannerFont.pointSize() + 8);
+    banner->setFont(bannerFont);
+    banner->setAlignment(Qt::AlignCenter);
+    banner->setMinimumHeight(56);
 
     // D_SM_MAIN STATIC2
     auto *description = new QLabel(
@@ -34,6 +47,7 @@ ConnectionListPage::ConnectionListPage(QWidget *parent)
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_table->verticalHeader()->hide();
     connect(m_table, &QTableWidget::cellDoubleClicked, this, &ConnectionListPage::onConnect);
 
     // B_NEW_SETTING / B_EDIT_SETTING / B_DELETE / IDOK
@@ -42,23 +56,56 @@ ConnectionListPage::ConnectionListPage(QWidget *parent)
     m_deleteButton = new QPushButton(tr("接続設定の削除(&D)"), this);
     m_connectButton = new QPushButton(tr("接続(&C)"), this);
     m_connectButton->setDefault(true);
+    QFont connectFont = m_connectButton->font();
+    connectFont.setBold(true);
+    m_connectButton->setFont(connectFont);
 
     connect(m_newButton, &QPushButton::clicked, this, &ConnectionListPage::onNewSetting);
     connect(m_editButton, &QPushButton::clicked, this, &ConnectionListPage::onEditSetting);
     connect(m_deleteButton, &QPushButton::clicked, this, &ConnectionListPage::onDeleteSetting);
     connect(m_connectButton, &QPushButton::clicked, this, &ConnectionListPage::onConnect);
 
-    auto *buttonLayout = new QHBoxLayout;
-    buttonLayout->addWidget(m_newButton);
-    buttonLayout->addWidget(m_editButton);
-    buttonLayout->addWidget(m_deleteButton);
-    buttonLayout->addStretch();
-    buttonLayout->addWidget(m_connectButton);
+    // 3列のボタングリッド。「接続」は3列目の2段目に置く。
+    auto *buttonGrid = new QGridLayout;
+    buttonGrid->addWidget(m_newButton, 0, 0);
+    buttonGrid->addWidget(m_editButton, 0, 1);
+    buttonGrid->addWidget(m_deleteButton, 0, 2);
+    buttonGrid->addWidget(m_connectButton, 1, 2);
+
+    auto *group = new QGroupBox(tr("SoftEther VPN Server への接続設定(&P):"), this);
+    auto *groupLayout = new QVBoxLayout(group);
+    groupLayout->addWidget(description);
+    groupLayout->addWidget(m_table, 1);
+    groupLayout->addLayout(buttonGrid);
+
+    // B_CERT_TOOL / B_SECURE_MANAGER / B_SELECT_SECURE / B_ABOUT / IDCANCEL
+    auto *certToolButton = new QPushButton(tr("証明書作成ツール(&R)"), this);
+    auto *secureManagerButton = new QPushButton(tr("スマートカードマネージャ(&S)..."), this);
+    auto *selectSecureButton = new QPushButton(tr("スマートカード選択(&M)..."), this);
+    for (QPushButton *button : {certToolButton, secureManagerButton, selectSecureButton}) {
+        button->setEnabled(false);
+        button->setToolTip(tr("未対応"));
+    }
+    auto *aboutButton = new QPushButton(tr("バージョン情報(&A)"), this);
+    auto *quitButton = new QPushButton(tr("管理マネージャの終了(&X)"), this);
+    connect(aboutButton, &QPushButton::clicked, this, &ConnectionListPage::onAbout);
+    connect(quitButton, &QPushButton::clicked, this, &ConnectionListPage::quitRequested);
+
+    // 公式Managerは3列均等のグリッド。終了ボタンは2列分の幅を使う。
+    auto *toolsGrid = new QGridLayout;
+    for (int column = 0; column < 3; ++column) {
+        toolsGrid->setColumnStretch(column, 1);
+    }
+    toolsGrid->addWidget(certToolButton, 0, 2);
+    toolsGrid->addWidget(secureManagerButton, 1, 1);
+    toolsGrid->addWidget(selectSecureButton, 1, 2);
+    toolsGrid->addWidget(aboutButton, 2, 0);
+    toolsGrid->addWidget(quitButton, 2, 1, 1, 2);
 
     auto *layout = new QVBoxLayout(this);
-    layout->addWidget(description);
-    layout->addWidget(m_table);
-    layout->addLayout(buttonLayout);
+    layout->addWidget(banner);
+    layout->addWidget(group, 1);
+    layout->addLayout(toolsGrid);
 
     reloadTable();
 }
@@ -69,8 +116,8 @@ void ConnectionListPage::reloadTable()
     for (int row = 0; row < m_profiles.size(); ++row) {
         const ConnectionProfile &profile = m_profiles.at(row);
 
-        // SM_HOSTNAME_AND_PORT: "%S:%u"
-        const QString destination = QStringLiteral("%1:%2").arg(profile.host).arg(profile.port);
+        // 公式Managerは接続先列にホスト名のみを表示する。
+        const QString destination = profile.host;
         // SM_MODE_SERVER / SM_MODE_HUB
         const QString target = profile.hubAdminMode ? profile.hubName : tr("サーバー全体");
 
@@ -180,15 +227,14 @@ void ConnectionListPage::connectToProfile(const ConnectionProfile &profile)
     }
 
     auto *rpc = new VpnServerRpc(this);
+    rpc->setProxy(profile.proxyType, profile.proxyHost, profile.proxyPort, profile.proxyUser, profile.proxyPassword);
     rpc->connectToServer(profile.host, profile.port, profile.hubAdminMode ? profile.hubName : QString(), password);
 
-    const bool hubAdminMode = profile.hubAdminMode;
-    const QString hubName = profile.hubName;
     rpc->test(
-        [this, rpc, hubAdminMode, hubName](const QJsonObject &) {
+        [this, rpc, profile](const QJsonObject &) {
             rpc->getServerInfo(
-                [this, rpc, hubAdminMode, hubName](const QJsonObject &info) {
-                    emit connected(rpc, info, hubAdminMode, hubName);
+                [this, rpc, profile](const QJsonObject &info) {
+                    emit connected(rpc, info, profile);
                 },
                 [this, rpc](const RpcError &error) {
                     rpc->deleteLater();
@@ -203,4 +249,15 @@ void ConnectionListPage::connectToProfile(const ConnectionProfile &profile)
             QMessageBox::warning(this, tr("エラー"),
                                   tr("接続に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
+}
+
+void ConnectionListPage::onAbout()
+{
+    // B_ABOUT
+    QMessageBox::about(this, tr("バージョン情報"),
+                        tr("<b>SoftEtherVPN-QtManager</b><br><br>"
+                           "SoftEther VPN Server の JSON-RPC 管理 API を利用する、Qt (%1) 製のクロスプラットフォーム管理ツールです。<br>"
+                           "公式の VPN Server Manager (Windows 専用) の画面構成を参考にしています。<br><br>"
+                           "SoftEther VPN は Apache License 2.0 で公開されています。")
+                            .arg(QString::fromLatin1(qVersion())));
 }

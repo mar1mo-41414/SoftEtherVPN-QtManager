@@ -2,6 +2,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -55,7 +57,7 @@ L3IfAddDialog::L3IfAddDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(ipGroup);
     layout->addWidget(buttonBox);
 
-    resize(520, sizeHint().height());
+    DialogSizing::fitToWidth(this, 520);
 }
 
 QJsonObject L3IfAddDialog::toRpcParams() const

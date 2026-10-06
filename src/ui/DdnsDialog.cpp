@@ -3,6 +3,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "util/DialogSizing.h"
+
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -12,7 +14,42 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
+#include <QStringView>
 #include <QVBoxLayout>
+
+namespace {
+
+// 設定ファイル(.config)のテキストから "declare DDnsClient { byte Key ... }" のKey値を取り出す。
+QString extractDdnsKey(const QString &config)
+{
+    const int declareIndex = config.indexOf(QRegularExpression(QStringLiteral("declare\\s+DDnsClient\\b")));
+    if (declareIndex < 0) {
+        return QString();
+    }
+    const int open = config.indexOf(QLatin1Char('{'), declareIndex);
+    if (open < 0) {
+        return QString();
+    }
+    int depth = 0;
+    int close = -1;
+    for (int i = open; i < config.size(); ++i) {
+        if (config.at(i) == QLatin1Char('{')) {
+            ++depth;
+        } else if (config.at(i) == QLatin1Char('}') && --depth == 0) {
+            close = i;
+            break;
+        }
+    }
+    if (close < 0) {
+        return QString();
+    }
+    const QString block = config.mid(open, close - open);
+    const QRegularExpressionMatch match =
+        QRegularExpression(QStringLiteral("^\\s*byte\\s+Key\\s+(\\S+)"), QRegularExpression::MultilineOption).match(block);
+    return match.hasMatch() ? match.captured(1) : QString();
+}
+
+} // namespace
 
 DdnsDialog::DdnsDialog(VpnServerRpc *rpc, QWidget *parent)
     : QDialog(parent)
@@ -39,6 +76,15 @@ DdnsDialog::DdnsDialog(VpnServerRpc *rpc, QWidget *parent)
     statusForm->addRow(tr("割当てられているダイナミック DNS ホスト名(&H):"), m_fqdnLabel);
     statusForm->addRow(tr("グローバル IPv&4 アドレス:"), m_ipv4Label);
     statusForm->addRow(tr("グローバル IPv&6 アドレス:"), m_ipv6Label);
+    // S_STATUS8 / B_HINT2
+    m_keyLabel = new QLabel(this);
+    m_keyLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    auto *keyHintButton = new QPushButton(tr("ヒント"), this);
+    connect(keyHintButton, &QPushButton::clicked, this, &DdnsDialog::onKeyHint);
+    auto *keyLayout = new QHBoxLayout;
+    keyLayout->addWidget(m_keyLabel, 1);
+    keyLayout->addWidget(keyHintButton);
+    statusForm->addRow(tr("DNS 鍵:"), keyLayout);
     auto *statusGroup = new QGroupBox(tr("現在の状態(&S)"), this);
     auto *statusLayout = new QVBoxLayout(statusGroup);
     statusLayout->addLayout(statusForm);
@@ -64,7 +110,7 @@ DdnsDialog::DdnsDialog(VpnServerRpc *rpc, QWidget *parent)
     hostHint->setWordWrap(true);
     auto *changeGroup = new QGroupBox(tr("設定の変更(&M)"), this);
     auto *changeLayout = new QVBoxLayout(changeGroup);
-    changeLayout->addWidget(new QLabel(tr("ダイナミック DNS ホスト名の変更(&C):"), this));
+    changeLayout->addWidget(new QLabel(tr("ダイナミック DNS ホスト名の変更:"), this));
     changeLayout->addLayout(hostLayout);
     changeLayout->addWidget(hostHint);
     changeLayout->addLayout(changeButtons);
@@ -93,8 +139,22 @@ DdnsDialog::DdnsDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(noticeLabel);
     layout->addLayout(bottomLayout);
 
-    resize(560, sizeHint().height());
+    DialogSizing::fitToWidth(this, 560);
     reload();
+    loadKey();
+}
+
+void DdnsDialog::loadKey()
+{
+    m_rpc->call(
+        QStringLiteral("GetConfig"), {},
+        [this](const QJsonObject &result) {
+            const QString config = QString::fromUtf8(QByteArray::fromBase64(result.value("FileData_bin").toString().toUtf8()));
+            const QString key = extractDdnsKey(config);
+            // SM_DDNS_KEY_ERR
+            m_keyLabel->setText(key.isEmpty() ? tr("DNS 鍵の取得に失敗しました。") : key);
+        },
+        [this](const RpcError &) { m_keyLabel->setText(tr("DNS 鍵の取得に失敗しました。")); });
 }
 
 void DdnsDialog::reload()
@@ -175,6 +235,21 @@ void DdnsDialog::onProxy()
 {
     DdnsProxyDialog dialog(m_rpc, this);
     dialog.exec();
+}
+
+void DdnsDialog::onKeyHint()
+{
+    // SM_DDNS_KEY_MSG
+    QMessageBox::information(
+        this, tr("ダイナミック DNS 秘密鍵"),
+        tr("ダイナミック DNS 秘密鍵: %1\n\n"
+           "この秘密鍵は、現在使用している DDNS 名と対応付けられています。現在 VPN Server として使用している PC が破損するなどして、"
+           "この秘密鍵が失われると、その時設定されていた DDNS 名は占有されたままの状態となり、他の VPN Server で使用できなくなります。"
+           "同じ名前を継続して使用したい場合は、秘密鍵を他の PC やインターネット上のストレージ、メモ用紙などに保管しておいてください。\n"
+           "秘密鍵を新しい VPN Server に設定する際は、VPN Server の設定ファイルを編集します。\"declare DDnsClient\" ディレクティブ中にある "
+           "\"byte Key\" に続く値を、保管しておいた秘密鍵の文字列で置き換えてください。\n"
+           "なお、同時に複数の VPN Server で同じ秘密鍵を設定すると正常に動作しなくなりますので注意してください。")
+            .arg(m_keyLabel->text()));
 }
 
 void DdnsDialog::onHint()

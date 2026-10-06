@@ -1,5 +1,7 @@
 #include "UserEditDialog.h"
 
+#include "util/DialogSizing.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -54,7 +56,7 @@ UserEditDialog::UserEditDialog(bool isNew, QWidget *parent)
     layout->addWidget(passwordGroup);
     layout->addWidget(buttonBox);
 
-    resize(400, sizeHint().height());
+    DialogSizing::fitToWidth(this, 400);
 }
 
 void UserEditDialog::setValues(const QString &name, const QString &groupName, const QString &realname,
