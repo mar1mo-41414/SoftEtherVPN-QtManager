@@ -8,6 +8,7 @@
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QJsonArray>
+#include <QPointer>
 #include <QTimer>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -187,9 +188,13 @@ DdnsDialog::DdnsDialog(VpnServerRpc *rpc, QWidget *parent)
 
 void DdnsDialog::loadCaps()
 {
+    QPointer<DdnsDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetCaps"), {},
-        [this](const QJsonObject &result) {
+        [this, guard](const QJsonObject &result) {
+            if (!guard) {
+                return;
+            }
             for (const QJsonValue &value : result.value("CapsList").toArray()) {
                 const QJsonObject cap = value.toObject();
                 if (cap.value("CapsName_str").toString() == QLatin1String("b_support_ddns_proxy")) {
@@ -212,22 +217,34 @@ void DdnsDialog::onDisableHint()
 
 void DdnsDialog::loadKey()
 {
+    QPointer<DdnsDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetConfig"), {},
-        [this](const QJsonObject &result) {
+        [this, guard](const QJsonObject &result) {
+            if (!guard) {
+                return;
+            }
             const QString config = QString::fromUtf8(QByteArray::fromBase64(result.value("FileData_bin").toString().toUtf8()));
             const QString key = extractDdnsKey(config);
             // SM_DDNS_KEY_ERR
             m_keyLabel->setText(key.isEmpty() ? tr("DNS 鍵の取得に失敗しました。") : key);
         },
-        [this](const RpcError &) { m_keyLabel->setText(tr("DNS 鍵の取得に失敗しました。")); });
+        [this, guard](const RpcError &) {
+            if (guard) {
+                m_keyLabel->setText(tr("DNS 鍵の取得に失敗しました。"));
+            }
+        });
 }
 
 void DdnsDialog::reload(bool silent)
 {
+    QPointer<DdnsDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetDDnsClientStatus"), {},
-        [this](const QJsonObject &status) {
+        [this, guard](const QJsonObject &status) {
+            if (!guard) {
+                return;
+            }
             m_currentHostName = status.value("CurrentHostName_str").toString();
             m_suffix = status.value("DnsSuffix_str").toString();
             if (!m_suffix.isEmpty() && !m_suffix.startsWith(QLatin1Char('.'))) {
@@ -255,8 +272,8 @@ void DdnsDialog::reload(bool silent)
             m_changeButton->setEnabled(reachable);
             m_restoreButton->setEnabled(reachable);
         },
-        [this, silent](const RpcError &error) {
-            if (!silent) {
+        [this, silent, guard](const RpcError &error) {
+            if (guard && !silent) {
                 RpcUi::showError(this, tr("ダイナミック DNS 状態の取得"), error);
             }
         });

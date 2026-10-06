@@ -6,6 +6,7 @@
 #include "util/DialogSizing.h"
 
 #include <QDesktopServices>
+#include <QPointer>
 #include <QTimer>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -101,9 +102,14 @@ AzureDialog::AzureDialog(VpnServerRpc *rpc, QWidget *parent)
 
 void AzureDialog::reload()
 {
+    // ダイアログが閉じられた後にRPC応答が返っても触らないようにする (定期更新で毎秒呼ばれるため)
+    QPointer<AzureDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetAzureStatus"), {},
-        [this](const QJsonObject &result) {
+        [this, guard](const QJsonObject &result) {
+            if (!guard) {
+                return;
+            }
             const bool enabled = result.value("IsEnabled_bool").toBool();
             if (!m_settingStatus) {
                 m_enableRadio->setChecked(enabled);
@@ -118,7 +124,10 @@ void AzureDialog::reload()
 
     m_rpc->call(
         QStringLiteral("GetDDnsClientStatus"), {},
-        [this](const QJsonObject &status) {
+        [this, guard](const QJsonObject &status) {
+            if (!guard) {
+                return;
+            }
             const QString hostName = status.value("CurrentHostName_str").toString();
             m_hostNameLabel->setText(hostName.isEmpty() ? tr("(なし)") : hostName + QStringLiteral(".vpnazure.net"));
         },
@@ -145,11 +154,17 @@ void AzureDialog::onSetStatus()
     m_settingStatus = true;
     m_rpc->call(
         QStringLiteral("SetAzureStatus"), params,
-        [this](const QJsonObject &) {
+        [this, guard = QPointer<AzureDialog>(this)](const QJsonObject &) {
+            if (!guard) {
+                return;
+            }
             m_settingStatus = false;
             reload();
         },
-        [this](const RpcError &error) {
+        [this, guard = QPointer<AzureDialog>(this)](const RpcError &error) {
+            if (!guard) {
+                return;
+            }
             m_settingStatus = false;
             RpcUi::showError(this, tr("VPN Azure 設定の変更"), error);
             reload();

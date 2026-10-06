@@ -18,6 +18,7 @@
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QPointer>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -151,9 +152,13 @@ void CascadeLinkListDialog::reload(bool silent)
     }
     m_reloading = true;
     const QString previousSelection = selectedAccountName();
+    QPointer<CascadeLinkListDialog> guard(this);
     m_rpc->enumLink(
         m_hubName,
-        [this, previousSelection](const QJsonObject &result) {
+        [this, previousSelection, guard](const QJsonObject &result) {
+            if (!guard) {
+                return;
+            }
             m_reloading = false;
             const QJsonArray linkList = result.value("LinkList").toArray();
             m_table->setRowCount(linkList.size());
@@ -183,7 +188,10 @@ void CascadeLinkListDialog::reload(bool silent)
             }
             onSelectionChanged();
         },
-        [this, silent](const RpcError &error) {
+        [this, silent, guard](const RpcError &error) {
+            if (!guard) {
+                return;
+            }
             m_reloading = false;
             if (silent) {
                 return; // 定期更新の失敗でダイアログを出し続けない
