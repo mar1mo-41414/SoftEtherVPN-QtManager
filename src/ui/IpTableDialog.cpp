@@ -35,6 +35,7 @@ IpTableDialog::IpTableDialog(VpnServerRpc *rpc, QString hubName, QString filterS
     // SM_IP_COLUMN_1/2/3/4/5
     m_table->setHorizontalHeaderLabels({tr("セッション名"), tr("IP アドレス"), tr("作成時刻"), tr("更新時刻"), tr("場所")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);

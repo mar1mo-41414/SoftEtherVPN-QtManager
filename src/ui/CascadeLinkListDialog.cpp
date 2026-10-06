@@ -2,11 +2,13 @@
 #include "CascadeLinkEditDialog.h"
 #include "CascadeLinkStatusDialog.h"
 
+#include "util/ErrorStrings.h"
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QJsonArray>
@@ -20,12 +22,20 @@
 
 namespace {
 
-QString linkStatusText(bool online, bool connected)
+// SM_LINK_STATUS_OFFLINE / _ERROR / _ONLINE / SM_LINK_CONNECTING
+QString linkStatusText(const QJsonObject &link)
 {
-    if (!online) {
-        return CascadeLinkListDialog::tr("オフライン");
+    if (!link.value("Online_bool").toBool()) {
+        return CascadeLinkListDialog::tr("オフライン (停止中)");
     }
-    return connected ? CascadeLinkListDialog::tr("オンライン (接続済み)") : CascadeLinkListDialog::tr("オンライン (未接続)");
+    if (link.value("Connected_bool").toBool()) {
+        return CascadeLinkListDialog::tr("オンライン (接続済み)");
+    }
+    const unsigned error = static_cast<unsigned>(link.value("LastError_u32").toDouble());
+    if (error != 0) {
+        return CascadeLinkListDialog::tr("エラー%1:%2").arg(error).arg(ErrorStrings::message(error));
+    }
+    return CascadeLinkListDialog::tr("接続処理中");
 }
 
 } // namespace
@@ -38,18 +48,26 @@ CascadeLinkListDialog::CascadeLinkListDialog(VpnServerRpc *rpc, QString hubName,
     // D_SM_LINK CAPTION
     setWindowTitle(tr("%1 上のカスケード接続").arg(m_hubName));
 
-    auto *titleLabel = new QLabel(
-        tr("カスケード接続を使用すると、この仮想 HUB を同一または別のコンピュータ上で動作している他の仮想 HUB に"
-           "レイヤ 2 カスケード接続することができます。接続方法を間違えるとループが発生する可能性があるため、"
-           "ネットワークトポロジには注意してください。"),
-        this);
+    auto *titleLabel =
+        new QLabel(tr("カスケード接続を使用すると、この仮想 HUB を同一または別のコンピュータ上で動作している他の仮想 HUB にレイヤ 2 カスケード接続することができます。"),
+                   this);
     titleLabel->setWordWrap(true);
+    // STATIC2 / STATIC3
+    auto *warningBox = new QGroupBox(tr("カスケード接続における警告"), this);
+    auto *warningLayout = new QVBoxLayout(warningBox);
+    auto *warningLabel = new QLabel(
+        tr("カスケード接続を使用すると、複数の仮想 HUB 間でのレイヤ 2 ブリッジが可能ですが、接続方法を間違えると、ループ状のカスケード接続を作成してしまう場合があります。カスケード接続機能を使用する際には、慎重にネットワークトポロジを設計してください。"),
+        this);
+    warningLabel->setWordWrap(true);
+    warningLayout->addWidget(warningLabel);
 
     m_table = new QTableWidget(this);
     m_table->setColumnCount(5);
+    // SM_LINK_COLUMN_1〜5
     m_table->setHorizontalHeaderLabels(
-        {tr("接続設定名"), tr("状態"), tr("接続先ホスト名"), tr("接続先仮想 HUB 名"), tr("接続完了時刻")});
+        {tr("接続設定名"), tr("状態"), tr("接続完了時刻"), tr("接続先 VPN Server"), tr("接続先仮想 HUB")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -63,7 +81,6 @@ CascadeLinkListDialog::CascadeLinkListDialog(VpnServerRpc *rpc, QString hubName,
     m_statusButton = new QPushButton(tr("状態(&S)"), this);
     m_deleteButton = new QPushButton(tr("削除(&D)"), this);
     m_renameButton = new QPushButton(tr("名前の変更(&A)"), this);
-    auto *refreshButton = new QPushButton(tr("最新の状態に更新(&R)"), this);
     auto *closeButton = new QPushButton(tr("閉じる(&X)"), this);
 
     connect(createButton, &QPushButton::clicked, this, &CascadeLinkListDialog::onCreate);
@@ -73,7 +90,6 @@ CascadeLinkListDialog::CascadeLinkListDialog(VpnServerRpc *rpc, QString hubName,
     connect(m_statusButton, &QPushButton::clicked, this, &CascadeLinkListDialog::onShowStatus);
     connect(m_deleteButton, &QPushButton::clicked, this, &CascadeLinkListDialog::onDelete);
     connect(m_renameButton, &QPushButton::clicked, this, &CascadeLinkListDialog::onRename);
-    connect(refreshButton, &QPushButton::clicked, this, &CascadeLinkListDialog::reload);
     connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
 
     auto *buttonLayout = new QHBoxLayout;
@@ -85,15 +101,15 @@ CascadeLinkListDialog::CascadeLinkListDialog(VpnServerRpc *rpc, QString hubName,
     buttonLayout->addWidget(m_deleteButton);
     buttonLayout->addWidget(m_renameButton);
     buttonLayout->addStretch();
-    buttonLayout->addWidget(refreshButton);
     buttonLayout->addWidget(closeButton);
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(titleLabel);
-    layout->addWidget(m_table);
+    layout->addWidget(warningBox);
+    layout->addWidget(m_table, 1);
     layout->addLayout(buttonLayout);
 
-    resize(780, 460);
+    resize(780, 560);
     onSelectionChanged();
     reload();
 }
@@ -110,10 +126,14 @@ QString CascadeLinkListDialog::selectedAccountName() const
 void CascadeLinkListDialog::onSelectionChanged()
 {
     const bool hasSelection = !selectedAccountName().isEmpty();
+    bool online = false;
+    if (hasSelection) {
+        online = m_table->item(m_table->selectedItems().first()->row(), 1)->data(Qt::UserRole).toBool();
+    }
     m_editButton->setEnabled(hasSelection);
-    m_onlineButton->setEnabled(hasSelection);
-    m_offlineButton->setEnabled(hasSelection);
-    m_statusButton->setEnabled(hasSelection);
+    m_onlineButton->setEnabled(hasSelection && !online);
+    m_offlineButton->setEnabled(hasSelection && online);
+    m_statusButton->setEnabled(hasSelection && online);
     m_deleteButton->setEnabled(hasSelection);
     m_renameButton->setEnabled(hasSelection);
 }
@@ -128,15 +148,20 @@ void CascadeLinkListDialog::reload()
             for (int row = 0; row < linkList.size(); ++row) {
                 const QJsonObject link = linkList.at(row).toObject();
                 m_table->setItem(row, 0, new QTableWidgetItem(link.value("AccountName_utf").toString()));
-                m_table->setItem(row, 1,
-                                  new QTableWidgetItem(linkStatusText(link.value("Online_bool").toBool(),
-                                                                       link.value("Connected_bool").toBool())));
-                m_table->setItem(row, 2, new QTableWidgetItem(link.value("Hostname_str").toString()));
-                m_table->setItem(row, 3, new QTableWidgetItem(link.value("TargetHubName_str").toString()));
-                m_table->setItem(row, 4,
-                                  new QTableWidgetItem(SoftEtherLabels::dateTime(link.value("ConnectedTime_dt").toString())));
+                const bool connected = link.value("Connected_bool").toBool();
+                auto *statusItem = new QTableWidgetItem(linkStatusText(link));
+                statusItem->setData(Qt::UserRole, link.value("Online_bool").toBool());
+                statusItem->setData(Qt::UserRole + 1, connected);
+                m_table->setItem(row, 1, statusItem);
+                m_table->setItem(row, 2, new QTableWidgetItem(connected ? SoftEtherLabels::dateTime(link.value("ConnectedTime_dt").toString())
+                                                                         : QString()));
+                m_table->setItem(row, 3, new QTableWidgetItem(link.value("Hostname_str").toString()));
+                m_table->setItem(row, 4, new QTableWidgetItem(link.value("TargetHubName_str").toString()));
             }
             m_table->resizeColumnsToContents();
+            for (int column = 0; column < m_table->columnCount(); ++column) {
+                m_table->setColumnWidth(column, qBound(110, m_table->columnWidth(column), 260));
+            }
             onSelectionChanged();
         },
         [this](const RpcError &error) {

@@ -32,9 +32,12 @@ SessionListDialog::SessionListDialog(VpnServerRpc *rpc, QString hubName, QWidget
     m_table = new QTableWidget(this);
     m_table->setColumnCount(8);
     // SM_SESS_COLUMN_1〜8
-    m_table->setHorizontalHeaderLabels({tr("セッション名"), tr("場所"), tr("ユーザー名"), tr("接続元ホスト名"),
-                                         tr("TCP コネクション"), tr("転送バイト数"), tr("転送パケット数"), tr("VLAN ID")});
+    // 公式Managerの列順: セッション名 / VLAN ID / 場所 / ユーザー名 / 接続元ホスト名 / TCP コネクション / 転送バイト数 / 転送パケット数
+    m_table->setHorizontalHeaderLabels({tr("セッション名"), tr("VLAN ID"), tr("場所"), tr("ユーザー名"),
+                                         tr("接続元ホスト名"), tr("TCP コネクション"), tr("転送バイト数"),
+                                         tr("転送パケット数")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -58,8 +61,8 @@ SessionListDialog::SessionListDialog(VpnServerRpc *rpc, QString hubName, QWidget
     opLayout->addWidget(m_statusButton, 0, 0);
     opLayout->addWidget(m_disconnectButton, 0, 1);
     opLayout->addWidget(refreshButton, 0, 2);
-    opLayout->addWidget(m_sessionMacButton, 1, 0);
-    opLayout->addWidget(m_sessionIpButton, 1, 1);
+    opLayout->addWidget(m_sessionMacButton, 0, 3);
+    opLayout->addWidget(m_sessionIpButton, 0, 4);
 
     // STATIC2: その他の管理タスク
     auto *macTableButton = new QPushButton(tr("MAC アドレステーブル一覧(&A)"), this);
@@ -75,18 +78,18 @@ SessionListDialog::SessionListDialog(VpnServerRpc *rpc, QString hubName, QWidget
     // IDCANCEL
     auto *closeButton = new QPushButton(tr("閉じる(&X)"), this);
     auto *bottomLayout = new QHBoxLayout;
+    bottomLayout->addWidget(otherGroup);
     bottomLayout->addStretch();
-    bottomLayout->addWidget(closeButton);
+    bottomLayout->addWidget(closeButton, 0, Qt::AlignBottom);
     connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(titleLabel);
     layout->addWidget(m_table);
     layout->addWidget(opGroup);
-    layout->addWidget(otherGroup);
     layout->addLayout(bottomLayout);
 
-    resize(760, 520);
+    resize(960, 520);
     onSelectionChanged();
     reload();
 }
@@ -127,16 +130,15 @@ void SessionListDialog::reload()
                                          .arg(session.value("CurrentNumTcp_u32").toInt())
                                          .arg(session.value("MaxNumTcp_u32").toInt());
 
+                const int vlan = session.value("VLanId_u32").toInt();
                 m_table->setItem(row, 0, new QTableWidgetItem(session.value("Name_str").toString()));
-                m_table->setItem(row, 1, new QTableWidgetItem(location));
-                m_table->setItem(row, 2, new QTableWidgetItem(session.value("Username_str").toString()));
-                m_table->setItem(row, 3, new QTableWidgetItem(session.value("Hostname_str").toString()));
-                m_table->setItem(row, 4, new QTableWidgetItem(tcp));
-                m_table->setItem(row, 5,
-                                  new QTableWidgetItem(QString::number(session.value("PacketSize_u64").toDouble(), 'f', 0)));
-                m_table->setItem(row, 6,
-                                  new QTableWidgetItem(QString::number(session.value("PacketNum_u64").toDouble(), 'f', 0)));
-                m_table->setItem(row, 7, new QTableWidgetItem(QString::number(session.value("VLanId_u32").toInt())));
+                m_table->setItem(row, 1, new QTableWidgetItem(vlan == 0 ? tr("－") : QString::number(vlan)));
+                m_table->setItem(row, 2, new QTableWidgetItem(location));
+                m_table->setItem(row, 3, new QTableWidgetItem(session.value("Username_str").toString()));
+                m_table->setItem(row, 4, new QTableWidgetItem(session.value("Hostname_str").toString()));
+                m_table->setItem(row, 5, new QTableWidgetItem(tcp));
+                m_table->setItem(row, 6, new QTableWidgetItem(SoftEtherLabels::number(session.value("PacketSize_u64").toDouble())));
+                m_table->setItem(row, 7, new QTableWidgetItem(SoftEtherLabels::number(session.value("PacketNum_u64").toDouble())));
             }
             m_table->resizeColumnsToContents();
             onSelectionChanged();

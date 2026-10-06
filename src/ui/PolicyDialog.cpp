@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSet>
 #include <QSpinBox>
 #include <QTableWidget>
 #include <QTextEdit>
@@ -48,7 +49,7 @@ QString policyName(const PolicyTable::Def &def)
 } // namespace
 
 PolicyDialog::PolicyDialog(const QString &windowTitle, const QString &heading, const QJsonObject &policy,
-                           QWidget *parent)
+                           QWidget *parent, bool cascadeMode)
     : QDialog(parent)
     , m_policy(defaultPolicy())
 {
@@ -76,10 +77,19 @@ PolicyDialog::PolicyDialog(const QString &windowTitle, const QString &heading, c
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     int count = 0;
     const PolicyTable::Def *defs = PolicyTable::defs(&count);
-    m_table->setRowCount(count);
+    // カスケード接続で使えないポリシー (ユーザー認証・セッション管理に関するもの)
+    static const QSet<QByteArray> kUserOnly = {"Access",   "NoBridge",     "NoRouting",   "MonitorPort", "MaxConnection",
+                                               "TimeOut",  "FixPassword",  "MultiLogins", "NoQoS",       "NoRoutingV6",
+                                               "NoSavePassword", "AutoDisconnect"};
     for (int i = 0; i < count; ++i) {
-        m_table->setItem(i, 0, new QTableWidgetItem(policyName(defs[i])));
-        m_table->setItem(i, 1, new QTableWidgetItem(valueText(i)));
+        if (!cascadeMode || !kUserOnly.contains(defs[i].key)) {
+            m_defIndex.append(i);
+        }
+    }
+    m_table->setRowCount(m_defIndex.size());
+    for (int row = 0; row < m_defIndex.size(); ++row) {
+        m_table->setItem(row, 0, new QTableWidgetItem(policyName(defs[m_defIndex.at(row)])));
+        m_table->setItem(row, 1, new QTableWidgetItem(valueText(m_defIndex.at(row))));
     }
     m_table->setColumnWidth(0, 300);
     connect(m_table, &QTableWidget::itemSelectionChanged, this, &PolicyDialog::onSelectionChanged);
@@ -184,7 +194,7 @@ QJsonObject PolicyDialog::extract(const QJsonObject &obj)
 int PolicyDialog::currentIndex() const
 {
     const QList<QTableWidgetItem *> selected = m_table->selectedItems();
-    return selected.isEmpty() ? -1 : selected.first()->row();
+    return selected.isEmpty() ? -1 : m_defIndex.at(selected.first()->row());
 }
 
 QString PolicyDialog::valueText(int index) const
@@ -200,9 +210,9 @@ QString PolicyDialog::valueText(int index) const
     return number == 0 ? tr("－") : unitSuffix(def.unit, number);
 }
 
-void PolicyDialog::refreshRow(int index)
+void PolicyDialog::refreshRow(int row)
 {
-    m_table->item(index, 1)->setText(valueText(index));
+    m_table->item(row, 1)->setText(valueText(m_defIndex.at(row)));
 }
 
 void PolicyDialog::onSelectionChanged()
@@ -263,5 +273,5 @@ void PolicyDialog::onValueEdited()
         m_spin->setEnabled(m_onRadio->isChecked());
         m_policy[keyOf(def)] = m_onRadio->isChecked() ? m_spin->value() : 0;
     }
-    refreshRow(index);
+    refreshRow(m_defIndex.indexOf(index));
 }

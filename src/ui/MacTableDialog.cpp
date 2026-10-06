@@ -34,8 +34,9 @@ MacTableDialog::MacTableDialog(VpnServerRpc *rpc, QString hubName, QString filte
     m_table->setColumnCount(6);
     // SM_MAC_COLUMN_1/2/3/4/5/1A
     m_table->setHorizontalHeaderLabels(
-        {tr("セッション名"), tr("MAC アドレス"), tr("作成時刻"), tr("更新時刻"), tr("場所"), tr("VLAN ID")});
+        {tr("セッション名"), tr("VLAN ID"), tr("MAC アドレス"), tr("作成時刻"), tr("更新時刻"), tr("場所")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -83,16 +84,16 @@ void MacTableDialog::reload()
                 auto *sessionItem = new QTableWidgetItem(sessionName);
                 sessionItem->setData(Qt::UserRole, entry.value("Key_u32").toDouble());
                 m_table->setItem(row, 0, sessionItem);
-                m_table->setItem(row, 1, new QTableWidgetItem(SoftEtherLabels::macAddress(
+                m_table->setItem(row, 1, new QTableWidgetItem(QString::number(entry.value("VlanId_u32").toInt())));
+                m_table->setItem(row, 2, new QTableWidgetItem(SoftEtherLabels::macAddress(
                                               entry.value("MacAddress_bin").toString())));
-                m_table->setItem(row, 2,
-                                  new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("CreatedTime_dt").toString())));
                 m_table->setItem(row, 3,
-                                  new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("UpdatedTime_dt").toString())));
+                                  new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("CreatedTime_dt").toString())));
                 m_table->setItem(row, 4,
+                                  new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("UpdatedTime_dt").toString())));
+                m_table->setItem(row, 5,
                                   new QTableWidgetItem(SoftEtherLabels::macIpLocation(
                                       entry.value("RemoteItem_bool").toBool(), entry.value("RemoteHostname_str").toString())));
-                m_table->setItem(row, 5, new QTableWidgetItem(QString::number(entry.value("VlanId_u32").toInt())));
                 ++row;
             }
 

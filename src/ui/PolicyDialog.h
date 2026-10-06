@@ -17,8 +17,9 @@ class PolicyDialog : public QDialog
     Q_OBJECT
 
 public:
+    // cascadeMode: カスケード接続用 (公式Managerと同じく、ユーザー専用の項目を除いた一覧を表示)。
     PolicyDialog(const QString &windowTitle, const QString &heading, const QJsonObject &policy,
-                 QWidget *parent = nullptr);
+                 QWidget *parent = nullptr, bool cascadeMode = false);
 
     // 編集後の "policy:*" キーのみを持つ JSON。
     QJsonObject policy() const { return m_policy; }
@@ -33,12 +34,14 @@ private slots:
     void onValueEdited();
 
 private:
-    QString valueText(int index) const;
-    void refreshRow(int index);
+    QString valueText(int defIndex) const;
+    void refreshRow(int row);
+    // 現在選択中の行に対応する PolicyTable の添字 (未選択なら -1)。
     int currentIndex() const;
 
     QJsonObject m_policy;
     bool m_loading = false;
+    QList<int> m_defIndex; // 表示行 → PolicyTable の添字
 
     QTableWidget *m_table;
     QLabel *m_nameLabel;
