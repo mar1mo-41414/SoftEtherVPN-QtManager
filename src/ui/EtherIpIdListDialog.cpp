@@ -20,18 +20,28 @@ EtherIpIdListDialog::EtherIpIdListDialog(VpnServerRpc *rpc, QWidget *parent)
     // D_SM_ETHERIP CAPTION
     setWindowTitle(tr("EtherIP / L2TPv3 サーバー機能の詳細設定"));
 
-    auto *introLabel = new QLabel(
-        tr("EtherIP / L2TPv3 による接続を受け付けるには、予め、クライアント側となる EtherIP / L2TPv3 対応ルータが"
-           "この VPN Server に接続する際の IPsec Phase 1 ID 文字列と、接続先の仮想 HUB の情報の対応表を"
-           "定義しておく必要があります。"),
-        this);
-    introLabel->setWordWrap(true);
+    // S_TITLE / S01 / S02
+    auto note = [this](const QString &text) {
+        auto *label = new QLabel(text, this);
+        label->setWordWrap(true);
+        return label;
+    };
+    auto *titleLabel = new QLabel(tr("EtherIP / L2TPv3 サーバー機能"), this);
+    QFont titleFont = titleLabel->font();
+    titleFont.setBold(true);
+    titleFont.setPointSize(titleFont.pointSize() + 4);
+    titleLabel->setFont(titleFont);
+    auto *tableCaption = new QLabel(tr("IPsec Phase 1 ID と接続先仮想 HUB との対応表(T):"), this);
+    QFont boldFont = tableCaption->font();
+    boldFont.setBold(true);
+    tableCaption->setFont(boldFont);
 
     m_table = new QTableWidget(this);
     m_table->setColumnCount(3);
     // SM_ETHERIP_COLUMN_0/1/2
     m_table->setHorizontalHeaderLabels({tr("ISAKMP Phase 1 ID"), tr("仮想 HUB 名"), tr("ユーザー名")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -48,19 +58,26 @@ EtherIpIdListDialog::EtherIpIdListDialog(VpnServerRpc *rpc, QWidget *parent)
     connect(m_deleteButton, &QPushButton::clicked, this, &EtherIpIdListDialog::onDelete);
     connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
 
-    auto *buttonLayout = new QHBoxLayout;
+    // 公式Managerは操作ボタンを表の右側に縦に並べる
+    auto *buttonLayout = new QVBoxLayout;
     buttonLayout->addWidget(addButton);
     buttonLayout->addWidget(m_editButton);
     buttonLayout->addWidget(m_deleteButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(closeButton);
 
-    auto *layout = new QVBoxLayout(this);
-    layout->addWidget(introLabel);
-    layout->addWidget(m_table);
-    layout->addLayout(buttonLayout);
+    auto *body = new QHBoxLayout;
+    body->addWidget(m_table, 1);
+    body->addLayout(buttonLayout);
 
-    resize(600, 400);
+    auto *layout = new QVBoxLayout(this);
+    layout->addWidget(titleLabel);
+    layout->addWidget(note(tr("VPN Server に EtherIP / L2TPv3 over IPsec に対応した市販のルータ機器からレイヤ 2 Ethernet ブリッジ接続を行うことができます。\nCisco 社のルータや NEC 製の IX ルータ、IIJ 製の SEIL ルータ等がお勧めです。")));
+    layout->addWidget(note(tr("EtherIP / L2TPv3 による接続を受け付けるには、予め、クライアント側となる EtherIP / L2TPv3 対応ルータがこの VPN Server に接続する際の IPsec Phase 1 ID 文字列と、接続先の仮想 HUB の情報の対応表を定義しておく必要があります。")));
+    layout->addWidget(tableCaption);
+    layout->addLayout(body, 1);
+
+    resize(700, 520);
     onSelectionChanged();
     reload();
 }

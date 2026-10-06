@@ -34,16 +34,17 @@ EtherIpIdEditDialog::EtherIpIdEditDialog(VpnServerRpc *rpc, bool isNew, QWidget 
     m_passwordEdit->setEchoMode(QLineEdit::Password);
     RpcUi::populateHubCombo(rpc, m_hubCombo);
 
+    // S02〜S05 / S07 / S06
+    auto *idForm = new QFormLayout;
+    idForm->addRow(tr("ISAKMP Phase 1 ID:"), m_idEdit);
     auto *form = new QFormLayout;
-    form->addRow(tr("ISAKMP Phase 1 &ID:"), m_idEdit);
-    form->addRow(tr("接続先の仮想 &HUB:"), m_hubCombo);
-    form->addRow(tr("ユーザー名(&U):"), m_userEdit);
-    form->addRow(tr("パスワード(&P):"), m_passwordEdit);
+    form->addRow(tr("接続先の仮想 HUB:"), m_hubCombo);
+    form->addRow(tr("ユーザー名(U):"), m_userEdit);
+    form->addRow(tr("パスワード(P):"), m_passwordEdit);
 
     auto *idHint = new QLabel(
-        tr("(ID はクライアント側のルータの接続設定で設定するものと同一の文字列を指定してください。"
-           "'*' (アスタリスク) を指定するとワイルドカード指定となり、他の明示的なルールに一致しないすべての接続元クライアントが"
-           "対象となります。)"),
+        tr("(ID はクライアント側のルータの接続設定で設定するものと同一の文字列を指定してください。文字列のほか、ID の種類が IP アドレスの場合は IP アドレスも指定できます。)\n\n"
+           "なお、'*' (アスタリスク) を指定するとワイルドカード指定となり、他の明示的なルールに一致しないすべての接続元クライアントが対象となります。"),
         this);
     idHint->setWordWrap(true);
     auto *userHint = new QLabel(
@@ -60,8 +61,9 @@ EtherIpIdEditDialog::EtherIpIdEditDialog(VpnServerRpc *rpc, bool isNew, QWidget 
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(introLabel);
-    layout->addLayout(form);
+    layout->addLayout(idForm);
     layout->addWidget(idHint);
+    layout->addLayout(form);
     layout->addWidget(userHint);
     layout->addWidget(buttonBox);
 
