@@ -27,11 +27,12 @@ private slots:
     void onSelectionChanged();
 
 private:
-    void reload();
+    void reload(bool silent = false);
     QString selectedAccountName() const;
 
     VpnServerRpc *m_rpc;
     QString m_hubName;
+    bool m_reloading = false;
     QTableWidget *m_table;
     QPushButton *m_editButton;
     QPushButton *m_deleteButton;

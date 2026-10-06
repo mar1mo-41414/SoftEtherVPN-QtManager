@@ -18,6 +18,7 @@
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace {
@@ -112,6 +113,11 @@ CascadeLinkListDialog::CascadeLinkListDialog(VpnServerRpc *rpc, QString hubName,
     resize(780, 560);
     onSelectionChanged();
     reload();
+
+    // 接続状態 (接続処理中→接続済み 等) は時間とともに変わるため、公式Managerと同様に定期更新する。
+    auto *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, [this]() { reload(/*silent=*/true); });
+    timer->start(2000);
 }
 
 QString CascadeLinkListDialog::selectedAccountName() const
@@ -138,11 +144,17 @@ void CascadeLinkListDialog::onSelectionChanged()
     m_renameButton->setEnabled(hasSelection);
 }
 
-void CascadeLinkListDialog::reload()
+void CascadeLinkListDialog::reload(bool silent)
 {
+    if (m_reloading) {
+        return;
+    }
+    m_reloading = true;
+    const QString previousSelection = selectedAccountName();
     m_rpc->enumLink(
         m_hubName,
-        [this](const QJsonObject &result) {
+        [this, previousSelection](const QJsonObject &result) {
+            m_reloading = false;
             const QJsonArray linkList = result.value("LinkList").toArray();
             m_table->setRowCount(linkList.size());
             for (int row = 0; row < linkList.size(); ++row) {
@@ -162,9 +174,20 @@ void CascadeLinkListDialog::reload()
             for (int column = 0; column < m_table->columnCount(); ++column) {
                 m_table->setColumnWidth(column, qBound(110, m_table->columnWidth(column), 260));
             }
+            // 更新前に選択していた接続設定を選び直す
+            for (int row = 0; row < m_table->rowCount(); ++row) {
+                if (!previousSelection.isEmpty() && m_table->item(row, 0)->text() == previousSelection) {
+                    m_table->selectRow(row);
+                    break;
+                }
+            }
             onSelectionChanged();
         },
-        [this](const RpcError &error) {
+        [this, silent](const RpcError &error) {
+            m_reloading = false;
+            if (silent) {
+                return; // 定期更新の失敗でダイアログを出し続けない
+            }
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
