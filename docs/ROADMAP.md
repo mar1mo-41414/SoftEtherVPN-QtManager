@@ -77,8 +77,11 @@
         残りはアプリ独自文言・長文説明文などで継続作業中
   - [x] パッケージング: macOS `.app`/zip (`packaging/macos/build-app.sh`、実機確認済み)、
         Linux `.deb` (CPack) / AppImage (`packaging/linux/build-appimage.sh`、
-        開発機がmacOSのみのためLinux側は未検証・ベストエフォート)。詳細は
-        [docs/PACKAGING.md](PACKAGING.md)
+        marnuxのLinux Mint 22 x86_64で実機ビルド・起動確認済み、arm64はCIのみ)。
+        専用アプリアイコン作成済み(`packaging/icon/`)。詳細は[docs/PACKAGING.md](PACKAGING.md)
+  - [x] GitHub公開 (`mar1mo-41414/SoftEtherVPN-QtManager`)、`.github/workflows/release.yml`で
+        タグpush時にmacOS arm64/Linux x64・arm64のビルド成果物をGitHub Release化。
+        macOS Intel版はGitHub Actionsのランナーが既に無いため手動ビルド対応の方針
   - [x] レイアウト再現(進行中): 接続一覧/接続編集(+プロキシ)/サーバー管理画面(D_SM_SERVER)/
         仮想HUB管理画面(D_SM_HUB)/ユーザー(6認証方式・有効期限・ポリシー)/グループ/
         セキュリティポリシー/アクセスリスト(IPv4/IPv6・MAC・TCP状態・リダイレクト・遅延/ロス、

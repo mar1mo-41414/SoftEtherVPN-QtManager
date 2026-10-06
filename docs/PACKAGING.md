@@ -48,14 +48,28 @@ packaging/linux/build-appimage.sh
 ```
 
 [linuxdeploy](https://github.com/linuxdeploy/linuxdeploy) と
-linuxdeploy-plugin-qt を自動ダウンロードして使い、`dist/linux/*.AppImage`を生成する
-想定のスクリプト。
+linuxdeploy-plugin-qt を自動ダウンロードして使い、`dist/linux/SoftEtherVPN-QtManager-<arch>.AppImage`
+を生成する(`uname -m`でx86_64/aarch64を自動判定)。
 
-**未検証:** こちらもmacdeployqt同様にLinux上での実行確認ができていない
-(ベストエフォート)。専用アプリアイコンも未作成のため、デスクトップエントリの
-`Icon=network-vpn`はfreedesktopの標準アイコン名へのフォールバックになっている
-(linuxdeployがアイコンを見つけられない旨の警告を出す可能性があるが、動作自体には
-影響しない見込み)。
+- marnux (Linux Mint 22, x86_64) で実機ビルド・起動確認済み(2026-10-06)。
+  `qt6-base-dev` `qt6-base-dev-tools` `qt6-l10n-tools` `qt6-tools-dev` が必要
+  (`qt6-l10n-tools`だけだとQt6LinguistToolsのCMake Configが無く`cmake`の段階で失敗する)。
+- `qmake`が`qtchooser`経由でQt5を指す環境があるため、スクリプト内で`QMAKE`環境変数に
+  `qmake6`を明示指定している。
+- aarch64 (Linux arm64) はGitHub Actions (`ubuntu-24.04-arm`) でのビルドのみ確認、
+  実機での起動確認はまだ。
+
+## GitHub Actions: 自動リリース
+
+`.github/workflows/release.yml` が `vX.Y.Z` 形式のタグをpushすると自動的に以下を
+ビルドしてGitHub Releaseに添付する:
+
+- macOS (Apple Silicon / arm64) `.app` の zip (`macos-14`ランナー)
+- Linux x86_64 / arm64 の AppImage (`ubuntu-24.04` / `ubuntu-24.04-arm`)
+
+macOS Intel (x86_64) 版はGitHub Actionsのホスト型ランナーがIntel Mac提供を終了して
+いるため含めていない。必要な場合はIntel Mac実機で`packaging/macos/build-app.sh`を
+実行し、Releaseページに手動でアップロードする。
 
 ## バージョン番号
 

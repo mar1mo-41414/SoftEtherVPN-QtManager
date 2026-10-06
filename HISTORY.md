@@ -187,3 +187,21 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
 - 開発機がmacOSのみのため、Linux側(.deb/AppImageとも)は実行確認ができておらず
   ベストエフォート・未検証である旨を`docs/PACKAGING.md`に明記した。
 - `build-release/`・`dist/`・`.packaging-tools/`・`*.deb`・`*.AppImage`を`.gitignore`に追加。
+
+## 2026-10-06 GitHub公開、AppImageをLinux arm64含めCI化
+
+- GitHub (`mar1mo-41414/SoftEtherVPN-QtManager`) にpublicリポジトリとして公開。
+  `origin`はGitea (git.markun.f5.si、開発時のメイン)のまま、`github`リモートを追加。
+- `.github/workflows/release.yml`: `vX.Y.Z`タグpushで以下を自動ビルドしGitHub Release化。
+  - macOS arm64 (`.app`のzip、`macos-14`ランナー)
+  - Linux x86_64 / arm64 (AppImage、`ubuntu-24.04` / `ubuntu-24.04-arm`)
+  macOS x86_64 (Intel)はGitHub Actionsのホスト型ランナーが既にIntel Mac提供を終了して
+  いるため含めず、手動ビルドでの対応とする方針。
+- `packaging/linux/build-appimage.sh`を`uname -m`でx86_64/aarch64自動判定するよう一般化
+  (linuxdeploy/linuxdeploy-plugin-qtはどちらのアーキテクチャの継続ビルドも提供している)。
+- Linux用の実アイコンを作成 (`packaging/icon/`、ImageMagickで生成した盾+Vモチーフ、
+  macOS `.icns`とLinux hicolorテーマ各サイズを用意)したことで、AppImageビルド時に
+  以前の`Icon=network-vpn`フォールバックで出ていた`ERROR: Could not find icon executable`
+  が解消した。
+- marnux (Linux Mint 22, x86_64) で生成したAppImageを実機起動確認のうえMacの
+  `~/Downloads/`に配置。

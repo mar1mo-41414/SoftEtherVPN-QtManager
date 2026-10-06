@@ -26,6 +26,12 @@ the Windows VPN Server Manager:
   connections, SecureNAT, local bridges, Layer 3 switches, etc.)
 - Session / MAC / IP table views, log file download, etc.
 
+## Download
+
+Prebuilt binaries are published on [Releases](../../releases)
+(macOS Apple Silicon / Linux x86_64 and arm64. The macOS Intel build is done
+manually, so it may lag behind).
+
 ## Build
 
 ```bash

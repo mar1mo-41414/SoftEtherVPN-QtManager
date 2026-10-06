@@ -26,6 +26,12 @@ SoftEther VPN Server（Linux/Mac/Windows問わず、JSON-RPC APIが有効なも�
   カスケード接続・SecureNAT・ローカルブリッジ・レイヤ3スイッチ 等）
 - セッション・MAC/IPテーブルの表示、ログファイルのダウンロード 等
 
+## ダウンロード
+
+ビルド済みバイナリを [Releases](../../releases) で配布しています
+(macOS Apple Silicon / Linux x86_64・arm64。macOS Intel版は手動ビルドのため
+提供にタイムラグがあります)。
+
 ## ビルド方法
 
 ```bash

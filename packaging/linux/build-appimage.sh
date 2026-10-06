@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Linux向けAppImageを作る。linuxdeploy + linuxdeploy-plugin-qt を使う。
-#
-# 注意: このプロジェクトは現状macOS環境でのみ開発・検証しているため、このスクリプト自体は
-# Linux上で未実行・未検証 (ベストエフォート)。Linux環境で実行して問題があれば調整すること。
+# x86_64 / aarch64 両対応 (uname -mで自動判定)。
 #
 # 使い方 (Linux上で):
 #   packaging/linux/build-appimage.sh
 #
-# 成果物: dist/linux/SoftEtherVPN-QtManager-x86_64.AppImage
+# 成果物: dist/linux/SoftEtherVPN-QtManager-<arch>.AppImage
+#
+# 実機検証: marnux (Linux Mint 22, x86_64) で動作確認済み(2026-10-06)。aarch64は
+# GitHub Actions (ubuntu-*-arm) でのビルドのみ、実機起動確認はまだ。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -15,6 +16,7 @@ BUILD_DIR="$ROOT/build-release"
 DIST_DIR="$ROOT/dist/linux"
 APP_NAME="SoftEtherVPN-QtManager"
 TOOLS_DIR="$ROOT/.packaging-tools"
+ARCH="$(uname -m)"
 
 mkdir -p "$TOOLS_DIR" "$DIST_DIR"
 
@@ -28,10 +30,10 @@ fetch_tool() {
     echo "$path"
 }
 
-LINUXDEPLOY=$(fetch_tool linuxdeploy-x86_64.AppImage \
-    "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage")
-LINUXDEPLOY_PLUGIN_QT=$(fetch_tool linuxdeploy-plugin-qt-x86_64.AppImage \
-    "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage")
+LINUXDEPLOY=$(fetch_tool "linuxdeploy-$ARCH.AppImage" \
+    "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-$ARCH.AppImage")
+LINUXDEPLOY_PLUGIN_QT=$(fetch_tool "linuxdeploy-plugin-qt-$ARCH.AppImage" \
+    "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-$ARCH.AppImage")
 
 cmake -S "$ROOT" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$BUILD_DIR" --config Release -j
