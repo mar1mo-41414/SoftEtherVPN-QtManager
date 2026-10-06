@@ -4,7 +4,7 @@
 #include <QString>
 
 // SHA-0 (SHA-1 からメッセージスケジュールの1ビット回転を除いたもの)。
-// SoftEther のパスワード認証 (HashedPassword = SHA0(大文字ユーザー名 + パスワード)) で使う。
+// SoftEther のパスワード認証 (HashedPassword = SHA0(パスワード + 大文字ユーザー名)) で使う。
 namespace Sha0 {
 
 inline QByteArray hash(const QByteArray &data)
@@ -71,10 +71,12 @@ inline QByteArray hash(const QByteArray &data)
     return digest;
 }
 
-// SoftEther 形式のパスワードハッシュ: SHA0(UPPER(ユーザー名) + パスワード)。
+// SoftEther 形式のパスワードハッシュ: SHA0(パスワード + UPPER(ユーザー名))。
+// ※ JSON-RPC の API ドキュメントには「ユーザー名 + パスワード」の順と書かれているが誤りで、
+//    本体の Cedar/Account.c HashPassword() は パスワード → 大文字ユーザー名 の順に連結する。
 inline QByteArray passwordHash(const QString &userName, const QString &password)
 {
-    return hash(userName.toUpper().toUtf8() + password.toUtf8());
+    return hash(password.toUtf8() + userName.toUpper().toUtf8());
 }
 
 } // namespace Sha0
