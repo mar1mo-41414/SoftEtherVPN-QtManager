@@ -35,6 +35,15 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/HubManagementPage.cpp
     src/ui/UserEditDialog.h
     src/ui/UserEditDialog.cpp
+    src/ui/HubOptionsDialog.h
+    src/ui/HubOptionsDialog.cpp
+    src/ui/HubAccessControlDialog.h
+    src/ui/HubAccessControlDialog.cpp
+    src/ui/HubMessageDialog.h
+    src/ui/HubMessageDialog.cpp
+    src/util/HubOptionTexts.h
+    src/util/ErrorStrings.h
+    src/util/Sha0.h
     src/ui/PolicyDialog.h
     src/ui/PolicyDialog.cpp
     src/util/PolicyTable.h

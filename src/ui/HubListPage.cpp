@@ -357,7 +357,7 @@ void HubListPage::refreshHubList()
 
 void HubListPage::onCreateHub()
 {
-    HubEditDialog dialog(/*isNew=*/true, this);
+    HubEditDialog dialog(m_rpc, /*isNew=*/true, this);
     if (dialog.exec() != QDialog::Accepted) {
         return;
     }
@@ -376,11 +376,9 @@ void HubListPage::onEditHub()
     m_rpc->getHub(
         hubName,
         [this](const QJsonObject &hub) {
-            auto *dialog = new HubEditDialog(/*isNew=*/false, this);
+            auto *dialog = new HubEditDialog(m_rpc, /*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
-            dialog->setValues(hub.value("HubName_str").toString(), hub.value("Online_bool").toBool(),
-                               hub.value("NoEnum_bool").toBool(),
-                               static_cast<quint32>(hub.value("MaxSession_u32").toDouble()));
+            dialog->setHub(hub);
             connect(dialog, &QDialog::accepted, this, [this, dialog]() {
                 m_rpc->setHub(
                     dialog->toRpcParams(), [this](const QJsonObject &) { refreshHubList(); },
