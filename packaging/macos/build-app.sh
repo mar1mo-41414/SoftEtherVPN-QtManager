@@ -35,6 +35,14 @@ cp -R "$APP_BUNDLE" "$DIST_DIR/"
 
 macdeployqt "$DIST_DIR/$APP_NAME.app"
 
+# macdeployqtがフレームワーク内dylibのrpathをinstall_name_toolで書き換える際、
+# 元の(リンク時に自動付与された)署名が無効化されてしまう。再署名しないまま配布すると
+# 「このアプリケーションは、必要なコードシグネチャを持っていません」的なSIGKILLで
+# 起動時に即クラッシュする(実機で確認: EXC_BAD_ACCESS/SIGKILL Code Signature Invalid)。
+# Developer ID等は無いためad-hoc(`-s -`)で再署名するだけで起動できるようになる。
+codesign --force --deep -s - "$DIST_DIR/$APP_NAME.app"
+codesign --verify --deep --strict "$DIST_DIR/$APP_NAME.app"
+
 (cd "$DIST_DIR" && ditto -c -k --sequesterRsrc --keepParent "$APP_NAME.app" "$APP_NAME-macos.zip")
 
 echo "done: $DIST_DIR/$APP_NAME.app"

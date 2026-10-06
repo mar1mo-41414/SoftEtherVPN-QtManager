@@ -244,3 +244,22 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
   - `packaging/macos/build-app.sh`に`CMAKE_PREFIX_PATH`環境変数での上書きに対応させ、
     Homebrew以外の場所に入れたQtも指定できるようにした。
   - 実機(p_mac, x86_64)でビルド・起動確認済み、Releaseにx86_64版zipを追加。
+
+## 2026-10-06 macOSビルドの起動時クラッシュ(SIGKILL Code Signature Invalid)を修正
+
+- v0.1.0のReleaseに上げたmacOS arm64版`.app`が実機で起動直後にクラッシュする不具合を
+  ユーザー報告で発見。クラッシュレポート(`~/Library/Logs/DiagnosticReports/*.ips`)を
+  解析したところ `EXC_BAD_ACCESS` / `SIGKILL (Code Signature Invalid)` で、
+  `codesign --verify --deep --strict` でも
+  `invalid signature (code or signature have been modified) In subcomponent:
+  Contents/Frameworks/libbrotlicommon.1.dylib` と再現した。
+- 原因: `macdeployqt`がバンドルしたフレームワーク内dylibのrpathを`install_name_tool`で
+  書き換える際、リンク時にXcodeツールチェーンが自動付与したad-hoc署名が無効化される。
+  従来は`macdeployqt`実行後に再署名していなかったため、署名検証を厳格化した
+  macOS(このクラッシュはmacOS 27.2で確認)では起動時にカーネルがSIGKILLで止める。
+- 修正: `packaging/macos/build-app.sh`で`macdeployqt`実行後に
+  `codesign --force --deep -s - "$APP"` でad-hoc再署名し、
+  `codesign --verify --deep --strict` で検証するステップを追加。Developer ID証明書は
+  無いため引き続き未署名(ad-hoc)だが、これで起動時のクラッシュは解消する。
+- 修正後のビルドで実機起動確認(Apple Silicon・p_mac Intelとも)のうえ、
+  v0.1.0 Releaseの`SoftEtherVPN-QtManager-macos-arm64.zip`/`-x86_64.zip`を差し替え。
