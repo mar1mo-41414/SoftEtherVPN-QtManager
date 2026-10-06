@@ -3,6 +3,7 @@
 #include "rpc/VpnServerRpc.h"
 
 #include <QJsonObject>
+#include <QList>
 #include <QWidget>
 
 class QTableWidget;
@@ -10,8 +11,7 @@ class QLabel;
 class QPushButton;
 
 // D_SM_SERVER (仮想HUB一覧・基本操作) 相当の画面。
-// クラスタリング・IPsec/L2TP・OpenVPN/SSTP・DDNS・VPN Azure等のサーバー全体設定は
-// 後続フェーズで追加する。
+// サーバー全体の設定 (リスナー・証明書・ブリッジ・L3・IPsec・OpenVPN・DDNS・Azure・クラスタ) の入口を兼ねる。
 class HubListPage : public QWidget
 {
     Q_OBJECT
@@ -39,6 +39,8 @@ private slots:
     void onManageLocalBridge();
     void onManageListeners();
     void onManageServerSettings();
+    void onManageFarm();
+    void onShowFarmStatus();
     void onSelectionChanged();
 
 private:
@@ -60,8 +62,7 @@ private:
     QPushButton *m_offlineButton;
     QPushButton *m_statusButton;
     QPushButton *m_refreshButton;
-    QPushButton *m_localBridgeButton;
-    QPushButton *m_listenerButton;
-    QPushButton *m_serverSettingsButton;
+    QList<QPushButton *> m_serverAdminButtons;
+    QString m_serverName;
     QPushButton *m_disconnectButton;
 };

@@ -4,13 +4,14 @@
 
 #include <QDialog>
 
+class QCheckBox;
 class QComboBox;
 class QLineEdit;
+class QRadioButton;
 class QSpinBox;
 
 // 公式Manager「暗号化と通信関係の設定」(D_SM_SSL) 相当。サーバー全体の設定。
-// インターネット接続の維持機能・管理者パスワードの変更・VPN over ICMP/DNS設定・
-// 更新通知設定は後続フェーズで追加する。
+// 更新通知設定は未対応。
 class ServerSettingsDialog : public QDialog
 {
     Q_OBJECT
@@ -24,6 +25,8 @@ private slots:
     void onExportCert();
     void onViewCert();
     void onRegenerateCert();
+    void onChangePassword();
+    void onSpecialListener();
     void onOk();
 
 private:
@@ -38,4 +41,11 @@ private:
     QComboBox *m_syslogCombo;
     QLineEdit *m_syslogHostEdit;
     QSpinBox *m_syslogPortSpin;
+
+    QCheckBox *m_keepCheck;
+    QLineEdit *m_keepHostEdit;
+    QSpinBox *m_keepPortSpin;
+    QSpinBox *m_keepIntervalSpin;
+    QRadioButton *m_keepTcpRadio;
+    QRadioButton *m_keepUdpRadio;
 };

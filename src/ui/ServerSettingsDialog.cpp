@@ -1,6 +1,11 @@
 #include "ServerSettingsDialog.h"
+#include "AdminPasswordDialog.h"
 #include "CertInfoDialog.h"
+#include "SpecialListenerDialog.h"
 
+#include "util/RpcUiHelpers.h"
+
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFile>
@@ -13,6 +18,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -77,6 +83,49 @@ ServerSettingsDialog::ServerSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     auto *syslogGroup = new QGroupBox(tr("syslog 送信機能"), this);
     syslogGroup->setLayout(syslogForm);
 
+    // STATIC8〜S_INFO: インターネット接続の維持機能
+    m_keepCheck = new QCheckBox(tr("インターネット接続の維持機能を使用する(&K)"), this);
+    m_keepHostEdit = new QLineEdit(this);
+    m_keepPortSpin = new QSpinBox(this);
+    m_keepPortSpin->setRange(1, 65535);
+    m_keepPortSpin->setValue(80);
+    m_keepIntervalSpin = new QSpinBox(this);
+    m_keepIntervalSpin->setRange(1, 3600);
+    m_keepIntervalSpin->setValue(50);
+    m_keepIntervalSpin->setSuffix(tr(" 秒"));
+    m_keepTcpRadio = new QRadioButton(tr("TCP/IP プロトコル(&T)"), this);
+    m_keepUdpRadio = new QRadioButton(tr("UDP/IP プロトコル(&U)"), this);
+    m_keepTcpRadio->setChecked(true);
+    auto *keepProtocolLayout = new QHBoxLayout;
+    keepProtocolLayout->addWidget(m_keepTcpRadio);
+    keepProtocolLayout->addWidget(m_keepUdpRadio);
+    auto *keepForm = new QFormLayout;
+    keepForm->addRow(m_keepCheck);
+    keepForm->addRow(tr("ホスト名(&H):"), m_keepHostEdit);
+    keepForm->addRow(tr("ポート番号(&F):"), m_keepPortSpin);
+    keepForm->addRow(tr("パケット送出間隔(&D):"), m_keepIntervalSpin);
+    keepForm->addRow(tr("プロトコル(&L):"), keepProtocolLayout);
+    auto *keepHint = new QLabel(
+        tr("一定期間無通信状態が続くと接続が自動的に切断されるようなネットワーク接続環境の場合、インターネット上の任意のサーバーに対して"
+           "一定間隔ごとにパケットを送信することにより、インターネット接続を維持することができます。"
+           "送信されるパケットはランダムな内容であり、個人情報などが送信されることはありません。"),
+        this);
+    keepHint->setWordWrap(true);
+    auto *keepGroup = new QGroupBox(tr("インターネット接続の維持機能"), this);
+    auto *keepLayout = new QVBoxLayout(keepGroup);
+    keepLayout->addWidget(keepHint);
+    keepLayout->addLayout(keepForm);
+
+    // B_PASSWORD / B_SPECIALLISTENER
+    auto *passwordButton = new QPushButton(tr("管理者パスワードの変更(&P)"), this);
+    auto *specialButton = new QPushButton(tr("VPN over ICMP / DNS 設定"), this);
+    connect(passwordButton, &QPushButton::clicked, this, &ServerSettingsDialog::onChangePassword);
+    connect(specialButton, &QPushButton::clicked, this, &ServerSettingsDialog::onSpecialListener);
+    auto *extraButtons = new QHBoxLayout;
+    extraButtons->addWidget(passwordButton);
+    extraButtons->addWidget(specialButton);
+    extraButtons->addStretch();
+
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
     buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("キャンセル"));
@@ -88,6 +137,8 @@ ServerSettingsDialog::ServerSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     layout->addWidget(cipherGroup);
     layout->addWidget(certGroup);
     layout->addWidget(syslogGroup);
+    layout->addWidget(keepGroup);
+    layout->addLayout(extraButtons);
     layout->addWidget(buttonBox);
 
     resize(480, sizeHint().height());
@@ -112,6 +163,21 @@ void ServerSettingsDialog::reload()
             QMessageBox::warning(this, tr("エラー"),
                                   tr("サーバー証明書の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
+
+    m_rpc->call(
+        QStringLiteral("GetKeep"), {},
+        [this](const QJsonObject &result) {
+            m_keepCheck->setChecked(result.value("UseKeepConnect_bool").toBool());
+            m_keepHostEdit->setText(result.value("KeepConnectHost_str").toString());
+            const int port = result.value("KeepConnectPort_u32").toInt();
+            m_keepPortSpin->setValue(port > 0 ? port : 80);
+            const int interval = result.value("KeepConnectInterval_u32").toInt();
+            m_keepIntervalSpin->setValue(interval > 0 ? interval : 50);
+            const bool udp = result.value("KeepConnectProtocol_u32").toInt() == 1;
+            m_keepUdpRadio->setChecked(udp);
+            m_keepTcpRadio->setChecked(!udp);
+        },
+        [this](const RpcError &error) { RpcUi::showError(this, tr("インターネット接続維持機能の設定取得"), error); });
 
     m_rpc->getSysLog(
         [this](const QJsonObject &result) {
@@ -244,5 +310,27 @@ void ServerSettingsDialog::onOk()
                                   tr("syslog 設定の変更に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
 
+    QJsonObject keepParams;
+    keepParams["UseKeepConnect_bool"] = m_keepCheck->isChecked();
+    keepParams["KeepConnectHost_str"] = m_keepHostEdit->text().trimmed();
+    keepParams["KeepConnectPort_u32"] = m_keepPortSpin->value();
+    keepParams["KeepConnectProtocol_u32"] = m_keepUdpRadio->isChecked() ? 1 : 0;
+    keepParams["KeepConnectInterval_u32"] = m_keepIntervalSpin->value();
+    m_rpc->call(
+        QStringLiteral("SetKeep"), keepParams, [](const QJsonObject &) {},
+        [this](const RpcError &error) { RpcUi::showError(this, tr("インターネット接続維持機能の設定変更"), error); });
+
     accept();
+}
+
+void ServerSettingsDialog::onChangePassword()
+{
+    AdminPasswordDialog dialog(m_rpc, this);
+    dialog.exec();
+}
+
+void ServerSettingsDialog::onSpecialListener()
+{
+    SpecialListenerDialog dialog(m_rpc, this);
+    dialog.exec();
 }

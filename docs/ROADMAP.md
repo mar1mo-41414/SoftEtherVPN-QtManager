@@ -60,12 +60,18 @@
       (.cer/.key)のみ対応(PEM形式は未対応)。インターネット接続維持機能・管理者
       パスワード変更・VPN over ICMP/DNS設定は未対応(後続フェーズへ)。
       実機で一通り確認済み(2026-09-21)
-- [ ] **Phase 9: 拡張機能** — IPsec/L2TP（`SetIPsecServices` 等）、EtherIP/L2TPv3
+- [x] **Phase 9: 拡張機能** — IPsec/L2TP（`SetIPsecServices` 等）、EtherIP/L2TPv3
       （`*EtherIpId`）、OpenVPN/SSTPクローン設定（`SetOpenVpnSstpConfig`）、
-      DDNS（`GetDDnsClientStatus` 等）、VPN Azure、クラスタ/Farm設定、L3スイッチ
+      DDNS（`GetDDnsClientStatus` 等）、VPN Azure、クラスタ/Farm設定、L3スイッチ。
+      D_SM_IPSEC/D_SM_ETHERIP(_ID)/D_SM_OPENVPN/D_SM_DDNS/D_SM_PROXY/D_SM_AZURE/D_SM_FARM
+      (_MEMBER)/D_SM_L3(_ADD/_SW/_SW_IF/_SW_TABLE)/D_SM_SPECIALLISTENER/D_SM_CHANGE_PASSWORDを再現。
+      Phase 8で見送ったインターネット接続維持機能・管理者パスワード変更・VPN over ICMP/DNS設定も
+      D_SM_SSLに統合。仮想HUB一覧画面のボタンを「サーバー情報の参照および設定」グループへ再編。
+      EtherIP定義の編集は削除+再追加。SOCKS4/5はAPI上区別されないため単一選択肢。
+      実機で一通り確認済み(2026-10-06)
 - [ ] **Phase 10: 仕上げ** — 日本語/英語ローカライズ（Qt Linguist、`strtable_ja/en.stb`を
       訳語リファレンスに）、アイコン/レイアウトの公式GUIへの見た目寄せ、
       macOS `.app` / Linux AppImage・deb パッケージング
 
 ## 現在地
-Phase 8 完了・実機確認済み（nux2:5555）。次はPhase 9（IPsec/L2TP・EtherIP・OpenVPN/SSTP・DDNS・VPN Azure等の拡張機能）。
+Phase 9 完了・実機確認済み（nux2:5555）。次はPhase 10（公式UIの実機(Win11 VM)との見比べによるレイアウト調整、ローカライズ、パッケージング）。

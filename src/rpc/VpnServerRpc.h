@@ -14,6 +14,12 @@ public:
     explicit VpnServerRpc(QObject *parent = nullptr);
 
     void connectToServer(const QString &host, quint16 port, const QString &hubName, const QString &password);
+    void updatePassword(const QString &password) { m_client.setPassword(password); }
+
+    // 個別のラッパーを持たないAPIを呼ぶための汎用エントリ。メソッド名・パラメータは
+    // docs/upstream-reference/jsonrpc-api-reference.md の表記そのまま。
+    void call(const QString &method, const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+              const JsonRpcClient::ErrorCallback &onError);
 
     void test(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);
     void getServerInfo(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError);

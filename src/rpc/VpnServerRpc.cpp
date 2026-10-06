@@ -12,6 +12,12 @@ void VpnServerRpc::connectToServer(const QString &host, quint16 port, const QStr
     m_client.configure(host, port, hubName, password);
 }
 
+void VpnServerRpc::call(const QString &method, const QJsonObject &params, const JsonRpcClient::ResultCallback &onResult,
+                         const JsonRpcClient::ErrorCallback &onError)
+{
+    m_client.call(method, params, onResult, onError);
+}
+
 void VpnServerRpc::test(const JsonRpcClient::ResultCallback &onResult, const JsonRpcClient::ErrorCallback &onError)
 {
     QJsonObject params;

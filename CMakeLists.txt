@@ -79,6 +79,37 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/ListenerDialog.cpp
     src/ui/LogFileListDialog.h
     src/ui/LogFileListDialog.cpp
+    src/util/RpcUiHelpers.h
+    src/ui/EtherIpIdEditDialog.h
+    src/ui/EtherIpIdEditDialog.cpp
+    src/ui/EtherIpIdListDialog.h
+    src/ui/EtherIpIdListDialog.cpp
+    src/ui/IPsecSettingsDialog.h
+    src/ui/IPsecSettingsDialog.cpp
+    src/ui/OpenVpnSstpDialog.h
+    src/ui/OpenVpnSstpDialog.cpp
+    src/ui/DdnsProxyDialog.h
+    src/ui/DdnsProxyDialog.cpp
+    src/ui/DdnsDialog.h
+    src/ui/DdnsDialog.cpp
+    src/ui/AzureDialog.h
+    src/ui/AzureDialog.cpp
+    src/ui/FarmDialog.h
+    src/ui/FarmDialog.cpp
+    src/ui/FarmStatusDialog.h
+    src/ui/FarmStatusDialog.cpp
+    src/ui/L3IfAddDialog.h
+    src/ui/L3IfAddDialog.cpp
+    src/ui/L3TableAddDialog.h
+    src/ui/L3TableAddDialog.cpp
+    src/ui/L3SwitchEditDialog.h
+    src/ui/L3SwitchEditDialog.cpp
+    src/ui/L3SwitchListDialog.h
+    src/ui/L3SwitchListDialog.cpp
+    src/ui/SpecialListenerDialog.h
+    src/ui/SpecialListenerDialog.cpp
+    src/ui/AdminPasswordDialog.h
+    src/ui/AdminPasswordDialog.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
 )

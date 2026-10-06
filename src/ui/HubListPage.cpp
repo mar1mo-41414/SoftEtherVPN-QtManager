@@ -1,13 +1,22 @@
 #include "HubListPage.h"
+#include "AzureDialog.h"
+#include "DdnsDialog.h"
+#include "FarmDialog.h"
+#include "FarmStatusDialog.h"
 #include "HubEditDialog.h"
 #include "HubStatusDialog.h"
+#include "IPsecSettingsDialog.h"
+#include "L3SwitchListDialog.h"
 #include "ListenerDialog.h"
 #include "LocalBridgeDialog.h"
+#include "OpenVpnSstpDialog.h"
 #include "ServerSettingsDialog.h"
 
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QJsonArray>
@@ -53,10 +62,6 @@ HubListPage::HubListPage(QWidget *parent)
     m_onlineButton = new QPushButton(tr("オンライン(&O)"), this);
     m_offlineButton = new QPushButton(tr("オフライン(&F)"), this);
     m_statusButton = new QPushButton(tr("状態の表示(&S)"), this);
-    // B_BRIDGE / B_SSL / B_REFRESH / IDCANCEL
-    m_localBridgeButton = new QPushButton(tr("ローカルブリッジ設定(&B)"), this);
-    m_listenerButton = new QPushButton(tr("リスナーの管理(&J)"), this);
-    m_serverSettingsButton = new QPushButton(tr("暗号化と通信関係の設定(&W)"), this);
     m_refreshButton = new QPushButton(tr("最新の状態に更新(&H)"), this);
     m_disconnectButton = new QPushButton(tr("閉じる(&X)"), this);
 
@@ -67,31 +72,52 @@ HubListPage::HubListPage(QWidget *parent)
     connect(m_onlineButton, &QPushButton::clicked, this, &HubListPage::onSetOnline);
     connect(m_offlineButton, &QPushButton::clicked, this, &HubListPage::onSetOffline);
     connect(m_statusButton, &QPushButton::clicked, this, &HubListPage::onShowStatus);
-    connect(m_localBridgeButton, &QPushButton::clicked, this, &HubListPage::onManageLocalBridge);
-    connect(m_listenerButton, &QPushButton::clicked, this, &HubListPage::onManageListeners);
-    connect(m_serverSettingsButton, &QPushButton::clicked, this, &HubListPage::onManageServerSettings);
     connect(m_refreshButton, &QPushButton::clicked, this, &HubListPage::refreshHubList);
     connect(m_disconnectButton, &QPushButton::clicked, this, &HubListPage::disconnectRequested);
 
-    auto *buttonLayout = new QHBoxLayout;
-    buttonLayout->addWidget(m_manageButton);
-    buttonLayout->addWidget(m_createButton);
-    buttonLayout->addWidget(m_editButton);
-    buttonLayout->addWidget(m_deleteButton);
-    buttonLayout->addWidget(m_onlineButton);
-    buttonLayout->addWidget(m_offlineButton);
-    buttonLayout->addWidget(m_statusButton);
-    buttonLayout->addWidget(m_localBridgeButton);
-    buttonLayout->addWidget(m_listenerButton);
-    buttonLayout->addWidget(m_serverSettingsButton);
-    buttonLayout->addStretch();
-    buttonLayout->addWidget(m_refreshButton);
-    buttonLayout->addWidget(m_disconnectButton);
+    auto *hubButtonLayout = new QHBoxLayout;
+    hubButtonLayout->addWidget(m_manageButton);
+    hubButtonLayout->addWidget(m_createButton);
+    hubButtonLayout->addWidget(m_editButton);
+    hubButtonLayout->addWidget(m_deleteButton);
+    hubButtonLayout->addWidget(m_onlineButton);
+    hubButtonLayout->addWidget(m_offlineButton);
+    hubButtonLayout->addWidget(m_statusButton);
+
+    // 「サーバー情報の参照および設定」(D_SM_SERVER STATIC3) のボタン群。
+    // いずれもサーバー全体の管理権限が必要なため、仮想HUB管理モードでは無効化する。
+    auto *serverGrid = new QGridLayout;
+    auto addServerButton = [this, serverGrid](int row, int column, const QString &text, std::function<void()> action) {
+        auto *button = new QPushButton(text, this);
+        connect(button, &QPushButton::clicked, this, [action = std::move(action)]() { action(); });
+        serverGrid->addWidget(button, row, column);
+        m_serverAdminButtons << button;
+    };
+    addServerButton(0, 0, tr("暗号化と通信関係の設定(&W)"), [this]() { onManageServerSettings(); });
+    addServerButton(0, 1, tr("リスナーの管理(&J)"), [this]() { onManageListeners(); });
+    addServerButton(0, 2, tr("ローカルブリッジ設定(&B)"), [this]() { onManageLocalBridge(); });
+    addServerButton(0, 3, tr("レイヤ 3 スイッチ設定(&3)"), [this]() { L3SwitchListDialog(m_rpc, this).exec(); });
+    addServerButton(1, 0, tr("IPsec / L&2TP 設定"), [this]() { IPsecSettingsDialog(m_rpc, this).exec(); });
+    addServerButton(1, 1, tr("OpenVPN / MS-SSTP 設定"), [this]() { OpenVpnSstpDialog(m_rpc, this).exec(); });
+    addServerButton(1, 2, tr("ダイナミック DNS 設定"), [this]() { DdnsDialog(m_rpc, this).exec(); });
+    addServerButton(1, 3, tr("VPN Azure 設定"), [this]() { AzureDialog(m_rpc, this).exec(); });
+    addServerButton(2, 0, tr("クラスタリング構成(&M)"), [this]() { onManageFarm(); });
+    addServerButton(2, 1, tr("クラスタリング状態(&Z)"), [this]() { onShowFarmStatus(); });
+
+    auto *serverGroup = new QGroupBox(tr("サーバー情報の参照および設定(&N)"), this);
+    serverGroup->setLayout(serverGrid);
+
+    auto *bottomLayout = new QHBoxLayout;
+    bottomLayout->addStretch();
+    bottomLayout->addWidget(m_refreshButton);
+    bottomLayout->addWidget(m_disconnectButton);
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(m_serverInfoLabel);
     layout->addWidget(m_hubTable);
-    layout->addLayout(buttonLayout);
+    layout->addLayout(hubButtonLayout);
+    layout->addWidget(serverGroup);
+    layout->addLayout(bottomLayout);
 
     setHubActionButtonsEnabled(false);
 }
@@ -105,12 +131,12 @@ void HubListPage::setConnection(VpnServerRpc *rpc, const QJsonObject &serverInfo
     m_rpc->setParent(this);
     m_hubAdminMode = hubAdminMode;
 
-    // 仮想HUB管理モードでは仮想HUBの作成/削除・ローカルブリッジ設定・リスナー管理・
-    // サーバー設定にサーバー管理権限が必要なため操作させない。
+    // 仮想HUB管理モードでは仮想HUBの作成/削除とサーバー全体の設定にサーバー管理権限が
+    // 必要なため操作させない。
     m_createButton->setEnabled(!hubAdminMode);
-    m_localBridgeButton->setEnabled(!hubAdminMode);
-    m_listenerButton->setEnabled(!hubAdminMode);
-    m_serverSettingsButton->setEnabled(!hubAdminMode);
+    for (QPushButton *button : std::as_const(m_serverAdminButtons)) {
+        button->setEnabled(!hubAdminMode);
+    }
     m_deleteButton->setEnabled(false);
 
     applyServerInfo(serverInfo);
@@ -122,6 +148,7 @@ void HubListPage::applyServerInfo(const QJsonObject &info)
     const QString productName = info.value("ServerProductName_str").toString();
     const QString version = info.value("ServerVersionString_str").toString();
     const QString hostName = info.value("ServerHostName_str").toString();
+    m_serverName = hostName;
     m_serverInfoLabel->setText(tr("接続先: %1 (%2 %3)").arg(hostName, productName, version));
 }
 
@@ -321,6 +348,34 @@ void HubListPage::onManageServerSettings()
 {
     ServerSettingsDialog dialog(m_rpc, this);
     dialog.exec();
+}
+
+void HubListPage::onManageFarm()
+{
+    FarmDialog dialog(m_rpc, m_serverName, this);
+    dialog.exec();
+}
+
+void HubListPage::onShowFarmStatus()
+{
+    // 現在の動作モード(スタンドアロン/コントローラ/メンバ)によって表示内容が変わるため、先に取得する。
+    m_rpc->call(
+        QStringLiteral("GetFarmSetting"), {},
+        [this](const QJsonObject &setting) {
+            const int type = setting.value("ServerType_u32").toInt();
+            if (type == 0) {
+                QMessageBox::information(this, tr("クラスタリング状態"),
+                                          tr("このサーバーはスタンドアロンサーバーとして動作しています。"
+                                             "クラスタリング構成は行われていません。"));
+                return;
+            }
+            FarmStatusDialog dialog(m_rpc, /*isController=*/type == 1, this);
+            dialog.exec();
+        },
+        [this](const RpcError &error) {
+            QMessageBox::warning(this, tr("エラー"),
+                                  tr("クラスタリング構成の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
+        });
 }
 
 void HubListPage::onShowStatus()
