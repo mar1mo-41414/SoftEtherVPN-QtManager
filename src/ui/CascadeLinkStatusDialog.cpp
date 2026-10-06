@@ -69,7 +69,10 @@ CascadeLinkStatusDialog::CascadeLinkStatusDialog(const QString &accountName, con
     if (connected) {
         rows << qMakePair(tr("初回セッションの確立時刻"), dateTime(s.value("FirstConnectionEstablisiedTime_dt").toString()));
         rows << qMakePair(tr("現在のセッションの確立時刻"), dateTime(s.value("CurrentConnectionEstablishTime_dt").toString()));
-        rows << qMakePair(tr("セッション確立回数"), tr("%1 回").arg(s.value("NumConnectionsEatablished_u32").toInt()));
+        // 実サーバーのキーは NumConnectionsEstablished_u32 (APIドキュメントの "Eatablished" は誤記)。
+        const QJsonValue established =
+            s.contains("NumConnectionsEstablished_u32") ? s.value("NumConnectionsEstablished_u32") : s.value("NumConnectionsEatablished_u32");
+        rows << qMakePair(tr("セッション確立回数"), tr("%1 回").arg(established.toInt()));
         const bool half = s.value("HalfConnection_bool").toBool();
         rows << qMakePair(tr("半二重 TCP コネクションモード"), half ? tr("はい (半二重モード)") : tr("いいえ (全二重モード)"));
         rows << qMakePair(tr("VoIP / QoS 対応機能"), s.value("QoS_bool").toBool() ? tr("有効 (使用中)") : tr("無効"));

@@ -3,6 +3,7 @@
 #include "NatTableDialog.h"
 #include "SecureNatOptionDialog.h"
 
+#include "util/RpcUiHelpers.h"
 #include "util/DialogSizing.h"
 
 #include <QDialogButtonBox>
@@ -98,7 +99,7 @@ void SecureNatDialog::refreshEnabledState()
 {
     m_rpc->getHubStatus(
         m_hubName,
-        [this](const QJsonObject &status) {
+        RpcUi::guarded(this, [this](const QJsonObject &status) {
             const bool enabled = status.value("SecureNATEnabled_bool").toBool();
 
             // 公式Manager同様、有効時は「有効にする」を、無効時は「無効にする」と
@@ -108,44 +109,44 @@ void SecureNatDialog::refreshEnabledState()
             m_natButton->setEnabled(enabled);
             m_dhcpButton->setEnabled(enabled);
             m_statusButton->setEnabled(enabled);
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("SecureNAT の状態取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void SecureNatDialog::onEnable()
 {
     m_rpc->enableSecureNAT(
         m_hubName,
-        [this](const QJsonObject &) {
+        RpcUi::guarded(this, [this](const QJsonObject &) {
             refreshEnabledState();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("SecureNAT 機能の有効化に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void SecureNatDialog::onDisable()
 {
     m_rpc->disableSecureNAT(
         m_hubName,
-        [this](const QJsonObject &) {
+        RpcUi::guarded(this, [this](const QJsonObject &) {
             refreshEnabledState();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("SecureNAT 機能の無効化に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void SecureNatDialog::onConfig()
 {
     m_rpc->getSecureNATOption(
         m_hubName,
-        [this](const QJsonObject &option) {
+        RpcUi::guarded(this, [this](const QJsonObject &option) {
             auto *dialog = new SecureNatOptionDialog(m_hubName, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setValues(option);
@@ -154,19 +155,19 @@ void SecureNatDialog::onConfig()
                 params["RpcHubName_str"] = m_hubName;
                 m_rpc->setSecureNATOption(
                     params, [](const QJsonObject &) {},
-                    [this](const RpcError &error) {
+                    RpcUi::guarded(this, [this](const RpcError &error) {
                         QMessageBox::warning(this, tr("エラー"),
                                               tr("SecureNAT の設定変更に失敗しました: %1 (code %2)")
                                                   .arg(error.message)
                                                   .arg(error.code));
-                    });
+                    }));
             });
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("SecureNAT の設定取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void SecureNatDialog::onShowNatTable()
@@ -185,7 +186,7 @@ void SecureNatDialog::onShowStatus()
 {
     m_rpc->getSecureNATStatus(
         m_hubName,
-        [this](const QJsonObject &status) {
+        RpcUi::guarded(this, [this](const QJsonObject &status) {
             auto *dialog = new QDialog(this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setWindowTitle(tr("SecureNAT の動作状況"));
@@ -209,9 +210,9 @@ void SecureNatDialog::onShowStatus()
             dialogLayout->addWidget(buttonBox);
 
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("SecureNAT の動作状況の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }

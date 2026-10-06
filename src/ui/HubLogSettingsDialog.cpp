@@ -93,7 +93,7 @@ HubLogSettingsDialog::HubLogSettingsDialog(VpnServerRpc *rpc, QString hubName, Q
     params["HubName_str"] = m_hubName;
     m_rpc->call(
         QStringLiteral("GetHubLog"), params,
-        [this](const QJsonObject &log) {
+        RpcUi::guarded(this, [this](const QJsonObject &log) {
             m_securityCheck->setChecked(log.value("SaveSecurityLog_bool").toBool());
             m_securitySwitch->setCurrentIndex(qBound(0, log.value("SecurityLogSwitchType_u32").toInt(), 5));
             m_packetCheck->setChecked(log.value("SavePacketLog_bool").toBool());
@@ -104,8 +104,8 @@ HubLogSettingsDialog::HubLogSettingsDialog(VpnServerRpc *rpc, QString hubName, Q
                 m_packetGroups.at(i)->button(level)->setChecked(true);
             }
             updateState();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("ログ保存設定の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("ログ保存設定の取得"), error); }));
 }
 
 void HubLogSettingsDialog::updateState()
@@ -136,6 +136,6 @@ void HubLogSettingsDialog::onOk()
     }
     params["PacketLogConfig_u32"] = config;
     m_rpc->call(
-        QStringLiteral("SetHubLog"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("ログ保存設定の保存"), error); });
+        QStringLiteral("SetHubLog"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("ログ保存設定の保存"), error); }));
 }

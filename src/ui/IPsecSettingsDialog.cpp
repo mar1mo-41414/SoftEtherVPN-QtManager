@@ -104,14 +104,14 @@ IPsecSettingsDialog::IPsecSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
 
     m_rpc->call(
         QStringLiteral("GetIPsecServices"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_l2tpIpsecCheck->setChecked(result.value("L2TP_IPsec_bool").toBool());
             m_l2tpRawCheck->setChecked(result.value("L2TP_Raw_bool").toBool());
             m_etherIpCheck->setChecked(result.value("EtherIP_IPsec_bool").toBool());
             m_pskEdit->setText(result.value("IPsec_Secret_str").toString());
             RpcUi::populateHubCombo(m_rpc, m_defaultHubCombo, result.value("L2TP_DefaultHub_str").toString());
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("IPsec 設定の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("IPsec 設定の取得"), error); }));
 }
 
 void IPsecSettingsDialog::onDetail()
@@ -146,6 +146,6 @@ void IPsecSettingsDialog::onOk()
     params["L2TP_DefaultHub_str"] = m_defaultHubCombo->currentText().trimmed();
 
     m_rpc->call(
-        QStringLiteral("SetIPsecServices"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("IPsec 設定の変更"), error); });
+        QStringLiteral("SetIPsecServices"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("IPsec 設定の変更"), error); }));
 }

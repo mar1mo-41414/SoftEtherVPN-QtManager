@@ -4,6 +4,8 @@
 
 #include "model/ConnectionProfileStore.h"
 
+#include "util/RpcUiHelpers.h"
+
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QGridLayout>
@@ -231,24 +233,24 @@ void ConnectionListPage::connectToProfile(const ConnectionProfile &profile)
     rpc->connectToServer(profile.host, profile.port, profile.hubAdminMode ? profile.hubName : QString(), password);
 
     rpc->test(
-        [this, rpc, profile](const QJsonObject &) {
+        RpcUi::guarded(this, [this, rpc, profile](const QJsonObject &) {
             rpc->getServerInfo(
-                [this, rpc, profile](const QJsonObject &info) {
+                RpcUi::guarded(this, [this, rpc, profile](const QJsonObject &info) {
                     emit connected(rpc, info, profile);
-                },
-                [this, rpc](const RpcError &error) {
+                }),
+                RpcUi::guarded(this, [this, rpc](const RpcError &error) {
                     rpc->deleteLater();
                     QMessageBox::warning(this, tr("エラー"),
                                           tr("サーバー情報の取得に失敗しました: %1 (code %2)")
                                               .arg(error.message)
                                               .arg(error.code));
-                });
-        },
-        [this, rpc](const RpcError &error) {
+                }));
+        }),
+        RpcUi::guarded(this, [this, rpc](const RpcError &error) {
             rpc->deleteLater();
             QMessageBox::warning(this, tr("エラー"),
                                   tr("接続に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void ConnectionListPage::onAbout()

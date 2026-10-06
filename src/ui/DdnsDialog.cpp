@@ -191,7 +191,7 @@ void DdnsDialog::loadCaps()
     QPointer<DdnsDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetCaps"), {},
-        [this, guard](const QJsonObject &result) {
+        RpcUi::guarded(this, [this, guard](const QJsonObject &result) {
             if (!guard) {
                 return;
             }
@@ -201,7 +201,7 @@ void DdnsDialog::loadCaps()
                     m_proxyButton->setVisible(cap.value("CapsValue_u32").toInt() != 0);
                 }
             }
-        },
+        }),
         [](const RpcError &) {});
 }
 
@@ -220,7 +220,7 @@ void DdnsDialog::loadKey()
     QPointer<DdnsDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetConfig"), {},
-        [this, guard](const QJsonObject &result) {
+        RpcUi::guarded(this, [this, guard](const QJsonObject &result) {
             if (!guard) {
                 return;
             }
@@ -228,12 +228,12 @@ void DdnsDialog::loadKey()
             const QString key = extractDdnsKey(config);
             // SM_DDNS_KEY_ERR
             m_keyLabel->setText(key.isEmpty() ? tr("DNS 鍵の取得に失敗しました。") : key);
-        },
-        [this, guard](const RpcError &) {
+        }),
+        RpcUi::guarded(this, [this, guard](const RpcError &) {
             if (guard) {
                 m_keyLabel->setText(tr("DNS 鍵の取得に失敗しました。"));
             }
-        });
+        }));
 }
 
 void DdnsDialog::reload(bool silent)
@@ -241,7 +241,7 @@ void DdnsDialog::reload(bool silent)
     QPointer<DdnsDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetDDnsClientStatus"), {},
-        [this, guard](const QJsonObject &status) {
+        RpcUi::guarded(this, [this, guard](const QJsonObject &status) {
             if (!guard) {
                 return;
             }
@@ -271,12 +271,12 @@ void DdnsDialog::reload(bool silent)
             }
             m_changeButton->setEnabled(reachable);
             m_restoreButton->setEnabled(reachable);
-        },
-        [this, silent, guard](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this, silent, guard](const RpcError &error) {
             if (guard && !silent) {
                 RpcUi::showError(this, tr("ダイナミック DNS 状態の取得"), error);
             }
-        });
+        }));
 }
 
 void DdnsDialog::onRestore()
@@ -296,7 +296,7 @@ void DdnsDialog::onChange()
     params["StrValue_str"] = newName;
     m_rpc->call(
         QStringLiteral("ChangeDDnsClientHostname"), params,
-        [this, newName](const QJsonObject &) {
+        RpcUi::guarded(this, [this, newName](const QJsonObject &) {
             reload();
             const QString fqdn = newName + m_suffix;
 
@@ -322,9 +322,9 @@ void DdnsDialog::onChange()
             certParams["StrValue_str"] = fqdn;
             m_rpc->call(
                 QStringLiteral("RegenerateServerCert"), certParams, [](const QJsonObject &) {},
-                [this](const RpcError &error) { RpcUi::showError(this, tr("サーバー証明書の再生成"), error); });
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("ダイナミック DNS ホスト名の変更"), error); });
+                RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("サーバー証明書の再生成"), error); }));
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("ダイナミック DNS ホスト名の変更"), error); }));
 }
 
 void DdnsDialog::onProxy()

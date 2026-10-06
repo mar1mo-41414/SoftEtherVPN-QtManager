@@ -68,7 +68,7 @@ DdnsProxyDialog::DdnsProxyDialog(VpnServerRpc *rpc, QWidget *parent)
 
     m_rpc->call(
         QStringLiteral("GetDDnsInternetSetting"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const int type = result.value("ProxyType_u32").toInt();
             m_httpRadio->setChecked(type == 1);
             m_socksRadio->setChecked(type == 2);
@@ -78,8 +78,8 @@ DdnsProxyDialog::DdnsProxyDialog(VpnServerRpc *rpc, QWidget *parent)
             m_portSpin->setValue(port > 0 ? port : 8080);
             m_userEdit->setText(result.value("ProxyUsername_str").toString());
             m_passwordEdit->setText(result.value("ProxyPassword_str").toString());
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("プロキシ設定の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("プロキシ設定の取得"), error); }));
 }
 
 void DdnsProxyDialog::onTypeChanged()
@@ -100,6 +100,6 @@ void DdnsProxyDialog::onOk()
     params["ProxyUsername_str"] = m_userEdit->text().trimmed();
     params["ProxyPassword_str"] = m_passwordEdit->text();
     m_rpc->call(
-        QStringLiteral("SetDDnsInternetSetting"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("プロキシ設定の変更"), error); });
+        QStringLiteral("SetDDnsInternetSetting"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("プロキシ設定の変更"), error); }));
 }

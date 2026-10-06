@@ -82,7 +82,7 @@ void EtherIpIdListDialog::reload()
 {
     m_rpc->call(
         QStringLiteral("EnumEtherIpId"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray settings = result.value("Settings").toArray();
             m_table->setRowCount(settings.size());
             for (int row = 0; row < settings.size(); ++row) {
@@ -93,8 +93,8 @@ void EtherIpIdListDialog::reload()
             }
             m_table->resizeColumnsToContents();
             onSelectionChanged();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義一覧の取得"), error); }));
 }
 
 void EtherIpIdListDialog::onAdd()
@@ -104,8 +104,8 @@ void EtherIpIdListDialog::onAdd()
         return;
     }
     m_rpc->call(
-        QStringLiteral("AddEtherIpId"), dialog.toRpcParams(), [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の追加"), error); });
+        QStringLiteral("AddEtherIpId"), dialog.toRpcParams(), RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の追加"), error); }));
 }
 
 void EtherIpIdListDialog::onEdit()
@@ -119,7 +119,7 @@ void EtherIpIdListDialog::onEdit()
     idParams["Id_str"] = id;
     m_rpc->call(
         QStringLiteral("GetEtherIpId"), idParams,
-        [this](const QJsonObject &current) {
+        RpcUi::guarded(this, [this](const QJsonObject &current) {
             auto *dialog = new EtherIpIdEditDialog(m_rpc, /*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setValues(current);
@@ -130,21 +130,21 @@ void EtherIpIdListDialog::onEdit()
                 deleteParams["Id_str"] = current.value("Id_str").toString();
                 m_rpc->call(
                     QStringLiteral("DeleteEtherIpId"), deleteParams,
-                    [this, newParams, current](const QJsonObject &) {
+                    RpcUi::guarded(this, [this, newParams, current](const QJsonObject &) {
                         m_rpc->call(
-                            QStringLiteral("AddEtherIpId"), newParams, [this](const QJsonObject &) { reload(); },
-                            [this, current](const RpcError &error) {
+                            QStringLiteral("AddEtherIpId"), newParams, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+                            RpcUi::guarded(this, [this, current](const RpcError &error) {
                                 RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の更新"), error);
                                 m_rpc->call(
-                                    QStringLiteral("AddEtherIpId"), current, [this](const QJsonObject &) { reload(); },
+                                    QStringLiteral("AddEtherIpId"), current, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
                                     [](const RpcError &) {});
-                            });
-                    },
-                    [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の更新"), error); });
+                            }));
+                    }),
+                    RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の更新"), error); }));
             });
             dialog->open();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の取得"), error); }));
 }
 
 void EtherIpIdListDialog::onDelete()
@@ -156,6 +156,6 @@ void EtherIpIdListDialog::onDelete()
     QJsonObject params;
     params["Id_str"] = id;
     m_rpc->call(
-        QStringLiteral("DeleteEtherIpId"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の削除"), error); });
+        QStringLiteral("DeleteEtherIpId"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の削除"), error); }));
 }

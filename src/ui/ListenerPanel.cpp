@@ -105,7 +105,7 @@ void ListenerPanel::reload()
         return;
     }
     m_rpc->enumListener(
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("ListenerList").toArray();
             m_table->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -126,8 +126,8 @@ void ListenerPanel::reload()
             }
             m_table->resizeColumnToContents(0);
             updateButtons();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("リスナー一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("リスナー一覧の取得"), error); }));
 }
 
 void ListenerPanel::onCreate()
@@ -166,8 +166,8 @@ void ListenerPanel::onCreate()
         return;
     }
     m_rpc->createListener(
-        static_cast<quint16>(portSpin->value()), true, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの作成"), error); });
+        static_cast<quint16>(portSpin->value()), true, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの作成"), error); }));
 }
 
 void ListenerPanel::onDelete()
@@ -177,8 +177,8 @@ void ListenerPanel::onDelete()
         return;
     }
     m_rpc->deleteListener(
-        static_cast<quint16>(port), [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの削除"), error); });
+        static_cast<quint16>(port), RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの削除"), error); }));
 }
 
 void ListenerPanel::onStart()
@@ -188,8 +188,8 @@ void ListenerPanel::onStart()
         return;
     }
     m_rpc->enableListener(
-        static_cast<quint16>(port), true, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの開始"), error); });
+        static_cast<quint16>(port), true, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの開始"), error); }));
 }
 
 void ListenerPanel::onStop()
@@ -199,6 +199,6 @@ void ListenerPanel::onStop()
         return;
     }
     m_rpc->enableListener(
-        static_cast<quint16>(port), false, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの停止"), error); });
+        static_cast<quint16>(port), false, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("リスナーの停止"), error); }));
 }

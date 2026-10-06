@@ -85,7 +85,7 @@ void HubCaDialog::reload()
     params["HubName_str"] = m_hubName;
     m_rpc->call(
         QStringLiteral("EnumCa"), params,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("CAList").toArray();
             m_table->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -101,8 +101,8 @@ void HubCaDialog::reload()
                 m_table->setColumnWidth(column, qMax(m_table->columnWidth(column), 220));
             }
             updateButtons();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("証明機関の一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("証明機関の一覧の取得"), error); }));
 }
 
 void HubCaDialog::onAdd()
@@ -131,8 +131,8 @@ void HubCaDialog::onAdd()
     params["HubName_str"] = m_hubName;
     params["Cert_bin"] = QString::fromLatin1(cert.toDer().toBase64());
     m_rpc->call(
-        QStringLiteral("AddCa"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("証明機関の追加"), error); });
+        QStringLiteral("AddCa"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("証明機関の追加"), error); }));
 }
 
 void HubCaDialog::onDelete()
@@ -154,8 +154,8 @@ void HubCaDialog::onDelete()
     params["HubName_str"] = m_hubName;
     params["Key_u32"] = m_table->item(row, 0)->data(Qt::UserRole).toDouble();
     m_rpc->call(
-        QStringLiteral("DeleteCa"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("証明機関の削除"), error); });
+        QStringLiteral("DeleteCa"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("証明機関の削除"), error); }));
 }
 
 void HubCaDialog::onView()
@@ -169,11 +169,11 @@ void HubCaDialog::onView()
     params["Key_u32"] = m_table->item(row, 0)->data(Qt::UserRole).toDouble();
     m_rpc->call(
         QStringLiteral("GetCa"), params,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QByteArray der = QByteArray::fromBase64(result.value("Cert_bin").toString().toLatin1());
             auto *dialog = new CertInfoDialog(der, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->open();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("証明書の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("証明書の取得"), error); }));
 }

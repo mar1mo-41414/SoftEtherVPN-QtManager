@@ -113,19 +113,19 @@ OpenVpnSstpDialog::OpenVpnSstpDialog(VpnServerRpc *rpc, QWidget *parent)
 
     m_rpc->call(
         QStringLiteral("GetOpenVpnSstpConfig"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_openVpnCheck->setChecked(result.value("EnableOpenVPN_bool").toBool());
             m_portsEdit->setText(result.value("OpenVPNPortList_str").toString());
             m_sstpCheck->setChecked(result.value("EnableSSTP_bool").toBool());
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("OpenVPN / MS-SSTP 設定の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("OpenVPN / MS-SSTP 設定の取得"), error); }));
 }
 
 void OpenVpnSstpDialog::onGenerateConfig()
 {
     m_rpc->call(
         QStringLiteral("MakeOpenVpnConfigFile"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QByteArray zip = QByteArray::fromBase64(result.value("Buffer_bin").toString().toUtf8());
             const QString path = QFileDialog::getSaveFileName(this, tr("OpenVPN 設定ファイルの保存先"),
                                                                 QStringLiteral("openvpn_config.zip"),
@@ -147,8 +147,8 @@ void OpenVpnSstpDialog::onGenerateConfig()
                    "なお、設定ファイルは実際に使用する前には環境に応じて修正する必要がある場合があります。\n\n"
                    "詳しくは ZIP ファイル内の 'readme.txt' ファイルをお読みください。")
                     .arg(path));
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("OpenVPN 設定ファイルの生成"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("OpenVPN 設定ファイルの生成"), error); }));
 }
 
 void OpenVpnSstpDialog::onIPsec()
@@ -164,6 +164,6 @@ void OpenVpnSstpDialog::onOk()
     params["OpenVPNPortList_str"] = m_portsEdit->text().trimmed();
     params["EnableSSTP_bool"] = m_sstpCheck->isChecked();
     m_rpc->call(
-        QStringLiteral("SetOpenVpnSstpConfig"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("OpenVPN / MS-SSTP 設定の変更"), error); });
+        QStringLiteral("SetOpenVpnSstpConfig"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("OpenVPN / MS-SSTP 設定の変更"), error); }));
 }

@@ -103,15 +103,15 @@ void AccessListDialog::load()
 {
     m_rpc->enumAccess(
         m_hubName,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_items.clear();
             const QJsonArray accessList = result.value("AccessList").toArray();
             for (const QJsonValue &value : accessList) {
                 m_items.append(value.toObject());
             }
             refreshTable();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("アクセスリストの取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("アクセスリストの取得"), error); }));
 }
 
 void AccessListDialog::refreshTable()
@@ -271,6 +271,6 @@ void AccessListDialog::onSave()
     params["HubName_str"] = m_hubName;
     params["AccessList"] = list;
     m_rpc->call(
-        QStringLiteral("SetAccessList"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("アクセスリストの保存"), error); });
+        QStringLiteral("SetAccessList"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("アクセスリストの保存"), error); }));
 }

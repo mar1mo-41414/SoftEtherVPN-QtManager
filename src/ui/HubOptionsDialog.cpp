@@ -99,7 +99,7 @@ HubOptionsDialog::HubOptionsDialog(VpnServerRpc *rpc, QString hubName, Kind kind
 
 void HubOptionsDialog::load()
 {
-    const auto onResult = [this](const QJsonObject &result) {
+    const auto onResult = RpcUi::guarded(this, [this](const QJsonObject &result) {
         m_items = result.value("AdminOptionList").toArray();
         m_table->setRowCount(m_items.size());
         for (int row = 0; row < m_items.size(); ++row) {
@@ -108,8 +108,8 @@ void HubOptionsDialog::load()
             m_table->setItem(row, 1, new QTableWidgetItem(QString::number(static_cast<qint64>(item.value("Value_u32").toDouble()))));
         }
         m_table->setColumnWidth(0, 340);
-    };
-    const auto onError = [this](const RpcError &error) { RpcUi::showError(this, tr("オプションの取得"), error); };
+    });
+    const auto onError = RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("オプションの取得"), error); });
     QJsonObject params;
     params["HubName_str"] = m_hubName;
     m_rpc->call(m_kind == Kind::Admin ? QStringLiteral("GetHubAdminOptions") : QStringLiteral("GetHubExtOptions"), params,
@@ -185,6 +185,6 @@ void HubOptionsDialog::onSave()
     params["AdminOptionList"] = m_items;
     m_rpc->call(
         m_kind == Kind::Admin ? QStringLiteral("SetHubAdminOptions") : QStringLiteral("SetHubExtOptions"), params,
-        [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("オプションの保存"), error); });
+        RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("オプションの保存"), error); }));
 }

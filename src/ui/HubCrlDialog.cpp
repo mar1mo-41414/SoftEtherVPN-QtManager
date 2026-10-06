@@ -91,7 +91,7 @@ void HubCrlDialog::reload()
     params["HubName_str"] = m_hubName;
     m_rpc->call(
         QStringLiteral("EnumCrl"), params,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("CRLList").toArray();
             m_table->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -101,8 +101,8 @@ void HubCrlDialog::reload()
                 m_table->setItem(row, 0, item);
             }
             updateButtons();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の一覧の取得"), error); }));
 }
 
 bool HubCrlDialog::editEntry(QJsonObject *entry)
@@ -293,8 +293,8 @@ void HubCrlDialog::onAdd()
     }
     entry["HubName_str"] = m_hubName;
     m_rpc->call(
-        QStringLiteral("AddCrl"), entry, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の追加"), error); });
+        QStringLiteral("AddCrl"), entry, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の追加"), error); }));
 }
 
 void HubCrlDialog::onEdit()
@@ -309,7 +309,7 @@ void HubCrlDialog::onEdit()
     params["Key_u32"] = key;
     m_rpc->call(
         QStringLiteral("GetCrl"), params,
-        [this, key](const QJsonObject &crl) {
+        RpcUi::guarded(this, [this, key](const QJsonObject &crl) {
             QJsonObject entry = crl;
             if (!editEntry(&entry)) {
                 return;
@@ -317,10 +317,10 @@ void HubCrlDialog::onEdit()
             entry["HubName_str"] = m_hubName;
             entry["Key_u32"] = key;
             m_rpc->call(
-                QStringLiteral("SetCrl"), entry, [this](const QJsonObject &) { reload(); },
-                [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の更新"), error); });
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の取得"), error); });
+                QStringLiteral("SetCrl"), entry, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+                RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の更新"), error); }));
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の取得"), error); }));
 }
 
 void HubCrlDialog::onDelete()
@@ -341,6 +341,6 @@ void HubCrlDialog::onDelete()
     params["HubName_str"] = m_hubName;
     params["Key_u32"] = m_table->item(row, 0)->data(Qt::UserRole).toDouble();
     m_rpc->call(
-        QStringLiteral("DelCrl"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の削除"), error); });
+        QStringLiteral("DelCrl"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("無効な証明書の削除"), error); }));
 }

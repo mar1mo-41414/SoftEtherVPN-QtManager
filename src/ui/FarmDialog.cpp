@@ -98,7 +98,7 @@ FarmDialog::FarmDialog(VpnServerRpc *rpc, QString serverName, QWidget *parent)
 
     m_rpc->call(
         QStringLiteral("GetFarmSetting"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const int type = result.value("ServerType_u32").toInt();
             m_controllerRadio->setChecked(type == 1);
             m_memberRadio->setChecked(type == 2);
@@ -117,8 +117,8 @@ FarmDialog::FarmDialog(VpnServerRpc *rpc, QString serverName, QWidget *parent)
             const int weight = result.value("Weight_u32").toInt();
             m_weightSpin->setValue(weight > 0 ? weight : 100);
             m_controllerOnlyCheck->setChecked(result.value("ControllerOnly_bool").toBool());
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタリング構成の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタリング構成の取得"), error); }));
 }
 
 void FarmDialog::onModeChanged()
@@ -182,6 +182,6 @@ void FarmDialog::onOk()
     params["ControllerOnly_bool"] = m_controllerRadio->isChecked() && m_controllerOnlyCheck->isChecked();
 
     m_rpc->call(
-        QStringLiteral("SetFarmSetting"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタリング構成の変更"), error); });
+        QStringLiteral("SetFarmSetting"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタリング構成の変更"), error); }));
 }

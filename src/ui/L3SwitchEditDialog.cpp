@@ -106,7 +106,7 @@ void L3SwitchEditDialog::reload()
 
     m_rpc->call(
         QStringLiteral("EnumL3If"), params,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("L3IFList").toArray();
             m_ifTable->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -116,12 +116,12 @@ void L3SwitchEditDialog::reload()
                 m_ifTable->setItem(row, 2, new QTableWidgetItem(item.value("HubName_str").toString()));
             }
             m_ifTable->resizeColumnsToContents();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想インターフェイス一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想インターフェイス一覧の取得"), error); }));
 
     m_rpc->call(
         QStringLiteral("EnumL3Table"), params,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("L3Table").toArray();
             m_routeTable->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -132,8 +132,8 @@ void L3SwitchEditDialog::reload()
                 m_routeTable->setItem(row, 3, new QTableWidgetItem(QString::number(item.value("Metric_u32").toInt())));
             }
             m_routeTable->resizeColumnsToContents();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("ルーティングテーブルの取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("ルーティングテーブルの取得"), error); }));
 }
 
 void L3SwitchEditDialog::onAddInterface()
@@ -145,8 +145,8 @@ void L3SwitchEditDialog::onAddInterface()
     QJsonObject params = dialog.toRpcParams();
     params["Name_str"] = m_switchName;
     m_rpc->call(
-        QStringLiteral("AddL3If"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想インターフェイスの追加"), error); });
+        QStringLiteral("AddL3If"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想インターフェイスの追加"), error); }));
 }
 
 void L3SwitchEditDialog::onDeleteInterface()
@@ -159,8 +159,8 @@ void L3SwitchEditDialog::onDeleteInterface()
     params["Name_str"] = m_switchName;
     params["HubName_str"] = m_ifTable->item(selected.first()->row(), 2)->text();
     m_rpc->call(
-        QStringLiteral("DelL3If"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想インターフェイスの削除"), error); });
+        QStringLiteral("DelL3If"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想インターフェイスの削除"), error); }));
 }
 
 void L3SwitchEditDialog::onAddTable()
@@ -172,8 +172,8 @@ void L3SwitchEditDialog::onAddTable()
     QJsonObject params = dialog.toRpcParams();
     params["Name_str"] = m_switchName;
     m_rpc->call(
-        QStringLiteral("AddL3Table"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("ルーティングテーブルエントリの追加"), error); });
+        QStringLiteral("AddL3Table"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("ルーティングテーブルエントリの追加"), error); }));
 }
 
 void L3SwitchEditDialog::onDeleteTable()
@@ -190,8 +190,8 @@ void L3SwitchEditDialog::onDeleteTable()
     params["GatewayAddress_ip"] = m_routeTable->item(row, 2)->text();
     params["Metric_u32"] = m_routeTable->item(row, 3)->text().toInt();
     m_rpc->call(
-        QStringLiteral("DelL3Table"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("ルーティングテーブルエントリの削除"), error); });
+        QStringLiteral("DelL3Table"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("ルーティングテーブルエントリの削除"), error); }));
 }
 
 void L3SwitchEditDialog::onStart()
@@ -200,7 +200,7 @@ void L3SwitchEditDialog::onStart()
     params["Name_str"] = m_switchName;
     m_rpc->call(
         QStringLiteral("StartL3Switch"), params, [](const QJsonObject &) {},
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作開始"), error); });
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作開始"), error); }));
 }
 
 void L3SwitchEditDialog::onStop()
@@ -209,5 +209,5 @@ void L3SwitchEditDialog::onStop()
     params["Name_str"] = m_switchName;
     m_rpc->call(
         QStringLiteral("StopL3Switch"), params, [](const QJsonObject &) {},
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作停止"), error); });
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作停止"), error); }));
 }

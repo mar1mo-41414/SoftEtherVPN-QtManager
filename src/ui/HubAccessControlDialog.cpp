@@ -105,14 +105,14 @@ void HubAccessControlDialog::load()
     params["HubName_str"] = m_hubName;
     m_rpc->call(
         QStringLiteral("GetAcList"), params,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_rules.clear();
             for (const QJsonValue &value : result.value("ACList").toArray()) {
                 m_rules.append(value.toObject());
             }
             refreshTable();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("接続元 IP 制限リストの取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("接続元 IP 制限リストの取得"), error); }));
 }
 
 void HubAccessControlDialog::refreshTable()
@@ -313,6 +313,6 @@ void HubAccessControlDialog::onSave()
     params["HubName_str"] = m_hubName;
     params["ACList"] = list;
     m_rpc->call(
-        QStringLiteral("SetAcList"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("接続元 IP 制限リストの保存"), error); });
+        QStringLiteral("SetAcList"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("接続元 IP 制限リストの保存"), error); }));
 }

@@ -212,26 +212,26 @@ void ServerSettingsDialog::updateCertInfo()
 void ServerSettingsDialog::reload()
 {
     m_rpc->getServerCipher(
-        [this](const QJsonObject &result) { m_cipherCombo->setCurrentText(result.value("String_str").toString()); },
-        [this](const RpcError &error) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) { m_cipherCombo->setCurrentText(result.value("String_str").toString()); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("暗号化アルゴリズムの取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 
     m_rpc->getServerCert(
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_certDer = QByteArray::fromBase64(result.value("Cert_bin").toString().toUtf8());
             m_keyDer = QByteArray::fromBase64(result.value("Key_bin").toString().toUtf8());
             updateCertInfo();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("サーバー証明書の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 
     m_rpc->call(
         QStringLiteral("GetKeep"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_keepCheck->setChecked(result.value("UseKeepConnect_bool").toBool());
             m_keepHostEdit->setText(result.value("KeepConnectHost_str").toString());
             const int port = result.value("KeepConnectPort_u32").toInt();
@@ -242,21 +242,21 @@ void ServerSettingsDialog::reload()
             m_keepUdpRadio->setChecked(udp);
             m_keepTcpRadio->setChecked(!udp);
             m_keepCheck->toggled(m_keepCheck->isChecked());
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("インターネット接続維持機能の設定取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("インターネット接続維持機能の設定取得"), error); }));
 
     m_rpc->getSysLog(
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const int index = m_syslogCombo->findData(result.value("SaveType_u32").toInt());
             m_syslogCombo->setCurrentIndex(index >= 0 ? index : 0);
             m_syslogHostEdit->setText(result.value("Hostname_str").toString());
             const int port = result.value("Port_u32").toInt();
             m_syslogPortSpin->setValue(port > 0 ? port : 514);
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("syslog 設定の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void ServerSettingsDialog::onImportCert()
@@ -344,38 +344,38 @@ void ServerSettingsDialog::onRegenerateCert()
     }
 
     m_rpc->regenerateServerCert(
-        cn, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        cn, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("証明書の新規作成に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void ServerSettingsDialog::onOk()
 {
     m_rpc->setServerCipher(
         m_cipherCombo->currentText().trimmed(), [](const QJsonObject &) {},
-        [this](const RpcError &error) {
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("暗号化アルゴリズムの設定に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 
     if (m_certChanged) {
         m_rpc->setServerCert(
             QString::fromUtf8(m_certDer.toBase64()), QString::fromUtf8(m_keyDer.toBase64()), [](const QJsonObject &) {},
-            [this](const RpcError &error) {
+            RpcUi::guarded(this, [this](const RpcError &error) {
                 QMessageBox::warning(this, tr("エラー"),
                                       tr("サーバー証明書の設定に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-            });
+            }));
     }
 
     m_rpc->setSysLog(
         m_syslogCombo->currentData().toInt(), m_syslogHostEdit->text().trimmed(),
         static_cast<quint16>(m_syslogPortSpin->value()), [](const QJsonObject &) {},
-        [this](const RpcError &error) {
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("syslog 設定の変更に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 
     QJsonObject keepParams;
     keepParams["UseKeepConnect_bool"] = m_keepCheck->isChecked();
@@ -385,7 +385,7 @@ void ServerSettingsDialog::onOk()
     keepParams["KeepConnectInterval_u32"] = m_keepIntervalSpin->value();
     m_rpc->call(
         QStringLiteral("SetKeep"), keepParams, [](const QJsonObject &) {},
-        [this](const RpcError &error) { RpcUi::showError(this, tr("インターネット接続維持機能の設定変更"), error); });
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("インターネット接続維持機能の設定変更"), error); }));
 
     accept();
 }

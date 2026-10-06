@@ -54,11 +54,11 @@ SpecialListenerDialog::SpecialListenerDialog(VpnServerRpc *rpc, QWidget *parent)
 
     m_rpc->call(
         QStringLiteral("GetSpecialListener"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_icmpCheck->setChecked(result.value("VpnOverIcmpListener_bool").toBool());
             m_dnsCheck->setChecked(result.value("VpnOverDnsListener_bool").toBool());
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("VPN over ICMP / DNS 設定の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("VPN over ICMP / DNS 設定の取得"), error); }));
 }
 
 void SpecialListenerDialog::onOk()
@@ -67,6 +67,6 @@ void SpecialListenerDialog::onOk()
     params["VpnOverIcmpListener_bool"] = m_icmpCheck->isChecked();
     params["VpnOverDnsListener_bool"] = m_dnsCheck->isChecked();
     m_rpc->call(
-        QStringLiteral("SetSpecialListener"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("VPN over ICMP / DNS 設定の変更"), error); });
+        QStringLiteral("SetSpecialListener"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("VPN over ICMP / DNS 設定の変更"), error); }));
 }

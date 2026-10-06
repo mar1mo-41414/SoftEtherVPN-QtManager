@@ -8,7 +8,22 @@
 #include <QPointer>
 #include <QWidget>
 
+#include <utility>
+
 namespace RpcUi {
+
+// 非同期RPCのコールバックを、owner (ダイアログ/ページ) が破棄された後は呼ばないようにするラッパー。
+// ダイアログが閉じた後にRPC応答が返ると、破棄済みオブジェクトを触ってクラッシュするのを防ぐ。
+//   m_rpc->enumUser(hub, RpcUi::guarded(this, [this](const QJsonObject &r) { ... }), RpcUi::guarded(this, [this](const RpcError &e) { ... }));
+template <typename F>
+auto guarded(QObject *owner, F callback)
+{
+    return [guard = QPointer<QObject>(owner), callback = std::move(callback)](auto &&...args) mutable {
+        if (guard) {
+            callback(std::forward<decltype(args)>(args)...);
+        }
+    };
+}
 
 inline void showError(QWidget *parent, const QString &what, const RpcError &error)
 {

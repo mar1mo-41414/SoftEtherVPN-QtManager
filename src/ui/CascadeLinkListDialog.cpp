@@ -2,6 +2,7 @@
 #include "CascadeLinkEditDialog.h"
 #include "CascadeLinkStatusDialog.h"
 
+#include "util/RpcUiHelpers.h"
 #include "util/ErrorStrings.h"
 #include "util/SoftEtherLabels.h"
 
@@ -155,7 +156,7 @@ void CascadeLinkListDialog::reload(bool silent)
     QPointer<CascadeLinkListDialog> guard(this);
     m_rpc->enumLink(
         m_hubName,
-        [this, previousSelection, guard](const QJsonObject &result) {
+        RpcUi::guarded(this, [this, previousSelection, guard](const QJsonObject &result) {
             if (!guard) {
                 return;
             }
@@ -187,8 +188,8 @@ void CascadeLinkListDialog::reload(bool silent)
                 }
             }
             onSelectionChanged();
-        },
-        [this, silent, guard](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this, silent, guard](const RpcError &error) {
             if (!guard) {
                 return;
             }
@@ -198,7 +199,7 @@ void CascadeLinkListDialog::reload(bool silent)
             }
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void CascadeLinkListDialog::onCreate()
@@ -211,11 +212,11 @@ void CascadeLinkListDialog::onCreate()
     QJsonObject params = dialog.toRpcParams();
     params["HubName_Ex_str"] = m_hubName;
     m_rpc->createLink(
-        params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続の作成に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void CascadeLinkListDialog::onEdit()
@@ -227,7 +228,7 @@ void CascadeLinkListDialog::onEdit()
 
     m_rpc->getLink(
         m_hubName, accountName,
-        [this](const QJsonObject &link) {
+        RpcUi::guarded(this, [this](const QJsonObject &link) {
             auto *dialog = new CascadeLinkEditDialog(/*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setValues(link);
@@ -235,20 +236,20 @@ void CascadeLinkListDialog::onEdit()
                 QJsonObject params = dialog->toRpcParams();
                 params["HubName_Ex_str"] = m_hubName;
                 m_rpc->setLink(
-                    params, [this](const QJsonObject &) { reload(); },
-                    [this](const RpcError &error) {
+                    params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+                    RpcUi::guarded(this, [this](const RpcError &error) {
                         QMessageBox::warning(this, tr("エラー"),
                                               tr("カスケード接続の設定変更に失敗しました: %1 (code %2)")
                                                   .arg(error.message)
                                                   .arg(error.code));
-                    });
+                    }));
             });
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続の設定取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void CascadeLinkListDialog::onDelete()
@@ -269,11 +270,11 @@ void CascadeLinkListDialog::onDelete()
     }
 
     m_rpc->deleteLink(
-        m_hubName, accountName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, accountName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続の削除に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void CascadeLinkListDialog::onRename()
@@ -306,11 +307,11 @@ void CascadeLinkListDialog::onRename()
     }
 
     m_rpc->renameLink(
-        m_hubName, oldName, newName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, oldName, newName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続の名前の変更に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void CascadeLinkListDialog::onSetOnline()
@@ -320,11 +321,11 @@ void CascadeLinkListDialog::onSetOnline()
         return;
     }
     m_rpc->setLinkOnline(
-        m_hubName, accountName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, accountName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続のオンライン化に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void CascadeLinkListDialog::onSetOffline()
@@ -334,11 +335,11 @@ void CascadeLinkListDialog::onSetOffline()
         return;
     }
     m_rpc->setLinkOffline(
-        m_hubName, accountName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, accountName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続のオフライン化に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void CascadeLinkListDialog::onShowStatus()
@@ -349,13 +350,13 @@ void CascadeLinkListDialog::onShowStatus()
     }
     m_rpc->getLinkStatus(
         m_hubName, accountName,
-        [this, accountName](const QJsonObject &status) {
+        RpcUi::guarded(this, [this, accountName](const QJsonObject &status) {
             auto *dialog = new CascadeLinkStatusDialog(accountName, status, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("カスケード接続の状態取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }

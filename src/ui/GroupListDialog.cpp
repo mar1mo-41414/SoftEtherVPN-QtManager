@@ -2,6 +2,8 @@
 #include "GroupEditDialog.h"
 #include "UserListDialog.h"
 
+#include "util/RpcUiHelpers.h"
+
 #include <QAbstractItemView>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -121,7 +123,7 @@ void GroupListDialog::reload()
 {
     m_rpc->enumGroup(
         m_hubName,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray groupList = result.value("GroupList").toArray();
             m_table->setRowCount(groupList.size());
             for (int row = 0; row < groupList.size(); ++row) {
@@ -136,11 +138,11 @@ void GroupListDialog::reload()
                 m_table->setColumnWidth(column, qMax(m_table->columnWidth(column), 110));
             }
             updateButtons();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("グループ一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void GroupListDialog::onCreate()
@@ -153,11 +155,11 @@ void GroupListDialog::onCreate()
     QJsonObject params = dialog.toRpcParams();
     params["HubName_str"] = m_hubName;
     m_rpc->createGroup(
-        params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("グループの作成に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void GroupListDialog::onEdit()
@@ -169,7 +171,7 @@ void GroupListDialog::onEdit()
 
     m_rpc->getGroup(
         m_hubName, groupName,
-        [this](const QJsonObject &group) {
+        RpcUi::guarded(this, [this](const QJsonObject &group) {
             auto *dialog = new GroupEditDialog(/*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setGroup(group);
@@ -177,20 +179,20 @@ void GroupListDialog::onEdit()
                 QJsonObject params = dialog->toRpcParams();
                 params["HubName_str"] = m_hubName;
                 m_rpc->setGroup(
-                    params, [this](const QJsonObject &) { reload(); },
-                    [this](const RpcError &error) {
+                    params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+                    RpcUi::guarded(this, [this](const RpcError &error) {
                         QMessageBox::warning(this, tr("エラー"),
                                               tr("グループの設定変更に失敗しました: %1 (code %2)")
                                                   .arg(error.message)
                                                   .arg(error.code));
-                    });
+                    }));
             });
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("グループの設定取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void GroupListDialog::onDelete()
@@ -211,9 +213,9 @@ void GroupListDialog::onDelete()
     }
 
     m_rpc->deleteGroup(
-        m_hubName, groupName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, groupName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("グループの削除に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }

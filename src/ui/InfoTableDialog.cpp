@@ -76,6 +76,6 @@ InfoTableDialog::InfoTableDialog(const QString &windowTitle, const QString &head
 
 void InfoTableDialog::reload()
 {
-    m_loader([this](const InfoTable::Rows &rows) { InfoTable::setRows(m_table, rows); },
-             [this](const RpcError &error) { RpcUi::showError(this, tr("情報の取得"), error); });
+    m_loader(RpcUi::guarded(this, [this](const InfoTable::Rows &rows) { InfoTable::setRows(m_table, rows); }),
+             RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("情報の取得"), error); }));
 }

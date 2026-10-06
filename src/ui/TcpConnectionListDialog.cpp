@@ -99,7 +99,7 @@ void TcpConnectionListDialog::reload()
 {
     m_rpc->call(
         QStringLiteral("EnumConnection"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("ConnectionList").toArray();
             m_table->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -114,8 +114,8 @@ void TcpConnectionListDialog::reload()
             }
             m_table->resizeColumnsToContents();
             onSelectionChanged();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("コネクション一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("コネクション一覧の取得"), error); }));
 }
 
 void TcpConnectionListDialog::onShowInfo()
@@ -173,6 +173,6 @@ void TcpConnectionListDialog::onDisconnect()
     QJsonObject params;
     params["Name_str"] = name;
     m_rpc->call(
-        QStringLiteral("DisconnectConnection"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("コネクションの切断"), error); });
+        QStringLiteral("DisconnectConnection"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("コネクションの切断"), error); }));
 }

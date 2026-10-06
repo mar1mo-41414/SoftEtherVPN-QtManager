@@ -179,8 +179,8 @@ void HubManagementPage::refreshStatus()
     }
     m_rpc->getHubStatus(
         m_hubName,
-        [this](const QJsonObject &status) { InfoTable::setRows(m_statusTable, ServerInfoDialogs::hubStatusRows(status)); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の状態の取得"), error); });
+        RpcUi::guarded(this, [this](const QJsonObject &status) { InfoTable::setRows(m_statusTable, ServerInfoDialogs::hubStatusRows(status)); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の状態の取得"), error); }));
 }
 
 void HubManagementPage::onManageUsers()
@@ -229,26 +229,26 @@ void HubManagementPage::onEditProperty()
 {
     m_rpc->getHub(
         m_hubName,
-        [this](const QJsonObject &hub) {
+        RpcUi::guarded(this, [this](const QJsonObject &hub) {
             auto *dialog = new HubEditDialog(m_rpc, /*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setHub(hub);
             connect(dialog, &QDialog::accepted, this, [this, dialog]() {
                 m_rpc->setHub(
                     dialog->toRpcParams(), [](const QJsonObject &) {},
-                    [this](const RpcError &error) {
+                    RpcUi::guarded(this, [this](const RpcError &error) {
                         QMessageBox::warning(this, tr("エラー"),
                                               tr("仮想 HUB の設定変更に失敗しました: %1 (code %2)")
                                                   .arg(error.message)
                                                   .arg(error.code));
-                    });
+                    }));
             });
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("仮想 HUB の設定取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void HubManagementPage::onRadius()

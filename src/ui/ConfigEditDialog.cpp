@@ -68,11 +68,11 @@ ConfigEditDialog::ConfigEditDialog(VpnServerRpc *rpc, QString serverName, QWidge
 
     m_rpc->call(
         QStringLiteral("GetConfig"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_fileName = result.value("FileName_str").toString();
             m_text->setPlainText(QString::fromUtf8(QByteArray::fromBase64(result.value("FileData_bin").toString().toUtf8())));
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("コンフィグレーションファイルの取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("コンフィグレーションファイルの取得"), error); }));
 }
 
 void ConfigEditDialog::onExport()
@@ -124,10 +124,10 @@ void ConfigEditDialog::onImport()
     params["FileData_bin"] = QString::fromLatin1(data.toBase64());
     m_rpc->call(
         QStringLiteral("SetConfig"), params,
-        [this](const QJsonObject &) {
+        RpcUi::guarded(this, [this](const QJsonObject &) {
             // SM_CONFIG_WRITE_OK
             QMessageBox::information(this, tr("完了"), tr("サーバー側のコンフィグレーションファイルを書き換えました。"));
             accept();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("コンフィグレーションファイルの書き込み"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("コンフィグレーションファイルの書き込み"), error); }));
 }

@@ -72,13 +72,13 @@ void AdminPasswordDialog::onOk()
     params["PlainTextPassword_str"] = newPassword;
     m_rpc->call(
         QStringLiteral("SetServerPassword"), params,
-        [this, newPassword](const QJsonObject &) {
+        RpcUi::guarded(this, [this, newPassword](const QJsonObject &) {
             m_rpc->updatePassword(newPassword);
             // SM_CHANGE_PASSWORD_3
             QMessageBox::information(this, tr("完了"),
                                       tr("パスワードを変更しました。\n\n接続設定に保存されているパスワードは自動では更新されません。"
                                          "次回接続時のために、接続設定の編集から新しいパスワードを設定し直してください。"));
             accept();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("管理者パスワードの変更"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("管理者パスワードの変更"), error); }));
 }

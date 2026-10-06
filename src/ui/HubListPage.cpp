@@ -238,11 +238,11 @@ void HubListPage::refreshFarmType()
     }
     m_rpc->call(
         QStringLiteral("GetFarmSetting"), {},
-        [this](const QJsonObject &setting) {
+        RpcUi::guarded(this, [this](const QJsonObject &setting) {
             m_farmType = setting.value("ServerType_u32").toInt();
             // 公式同様、クラスタを構成していない(スタンドアロン)間は「クラスタリング状態」を押せない。
             m_farmStatusButton->setEnabled(m_farmType != 0);
-        },
+        }),
         [](const RpcError &) {});
 }
 
@@ -259,7 +259,7 @@ void HubListPage::refreshFooter()
     // 公式同様: DDNSホスト名があるときだけ表示し、VPN Azureが有効なときだけAzureホスト名を併記する。
     m_rpc->call(
         QStringLiteral("GetDDnsClientStatus"), {},
-        [this](const QJsonObject &ddns) {
+        RpcUi::guarded(this, [this](const QJsonObject &ddns) {
             const QString fqdn = ddns.value("CurrentFqdn_str").toString();
             if (fqdn.isEmpty()) {
                 return;
@@ -271,15 +271,15 @@ void HubListPage::refreshFooter()
             const QString hostName = ddns.value("CurrentHostName_str").toString();
             m_rpc->call(
                 QStringLiteral("GetAzureStatus"), {},
-                [this, hostName](const QJsonObject &azure) {
+                RpcUi::guarded(this, [this, hostName](const QJsonObject &azure) {
                     if (azure.value("IsEnabled_bool").toBool()) {
                         m_azureValue->setText(hostName + QStringLiteral(".vpnazure.net"));
                         m_azureCaption->show();
                         m_azureValue->show();
                     }
-                },
+                }),
                 [](const RpcError &) {});
-        },
+        }),
         [](const RpcError &) {});
 }
 
@@ -322,7 +322,7 @@ void HubListPage::refreshHubList()
 
     const QString previouslySelected = selectedHubName();
     m_rpc->enumHub(
-        [this, previouslySelected](const QJsonObject &result) {
+        RpcUi::guarded(this, [this, previouslySelected](const QJsonObject &result) {
             const QJsonArray hubList = result.value("HubList").toArray();
             m_hubTable->setRowCount(hubList.size());
 
@@ -351,8 +351,8 @@ void HubListPage::refreshHubList()
 
             m_hubTable->resizeColumnsToContents();
             updateHubButtons();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB 一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB 一覧の取得"), error); }));
 }
 
 void HubListPage::onCreateHub()
@@ -362,8 +362,8 @@ void HubListPage::onCreateHub()
         return;
     }
     m_rpc->createHub(
-        dialog.toRpcParams(), [this](const QJsonObject &) { refreshHubList(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の作成"), error); });
+        dialog.toRpcParams(), RpcUi::guarded(this, [this](const QJsonObject &) { refreshHubList(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の作成"), error); }));
 }
 
 void HubListPage::onEditHub()
@@ -375,18 +375,18 @@ void HubListPage::onEditHub()
 
     m_rpc->getHub(
         hubName,
-        [this](const QJsonObject &hub) {
+        RpcUi::guarded(this, [this](const QJsonObject &hub) {
             auto *dialog = new HubEditDialog(m_rpc, /*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setHub(hub);
             connect(dialog, &QDialog::accepted, this, [this, dialog]() {
                 m_rpc->setHub(
-                    dialog->toRpcParams(), [this](const QJsonObject &) { refreshHubList(); },
-                    [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の設定変更"), error); });
+                    dialog->toRpcParams(), RpcUi::guarded(this, [this](const QJsonObject &) { refreshHubList(); }),
+                    RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の設定変更"), error); }));
             });
             dialog->open();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の設定取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の設定取得"), error); }));
 }
 
 void HubListPage::onDeleteHub()
@@ -410,8 +410,8 @@ void HubListPage::onDeleteHub()
     }
 
     m_rpc->deleteHub(
-        hubName, [this](const QJsonObject &) { refreshHubList(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の削除"), error); });
+        hubName, RpcUi::guarded(this, [this](const QJsonObject &) { refreshHubList(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB の削除"), error); }));
 }
 
 void HubListPage::onSetOnline()
@@ -421,8 +421,8 @@ void HubListPage::onSetOnline()
         return;
     }
     m_rpc->setHubOnline(
-        hubName, true, [this](const QJsonObject &) { refreshHubList(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB のオンライン化"), error); });
+        hubName, true, RpcUi::guarded(this, [this](const QJsonObject &) { refreshHubList(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB のオンライン化"), error); }));
 }
 
 void HubListPage::onSetOffline()
@@ -432,8 +432,8 @@ void HubListPage::onSetOffline()
         return;
     }
     m_rpc->setHubOnline(
-        hubName, false, [this](const QJsonObject &) { refreshHubList(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB のオフライン化"), error); });
+        hubName, false, RpcUi::guarded(this, [this](const QJsonObject &) { refreshHubList(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想 HUB のオフライン化"), error); }));
 }
 
 void HubListPage::onManageHub()

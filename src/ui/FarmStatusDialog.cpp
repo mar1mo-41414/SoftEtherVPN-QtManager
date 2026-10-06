@@ -76,7 +76,7 @@ void FarmStatusDialog::reloadMembers()
 {
     m_rpc->call(
         QStringLiteral("EnumFarmMember"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray members = result.value("FarmMemberList").toArray();
             m_table->setRowCount(members.size());
             for (int row = 0; row < members.size(); ++row) {
@@ -96,8 +96,8 @@ void FarmStatusDialog::reloadMembers()
             }
             m_table->resizeColumnsToContents();
             m_infoButton->setEnabled(!m_table->selectedItems().isEmpty());
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタメンバ一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタメンバ一覧の取得"), error); }));
 }
 
 void FarmStatusDialog::onShowMemberInfo()
@@ -112,7 +112,7 @@ void FarmStatusDialog::onShowMemberInfo()
     params["Id_u32"] = static_cast<qint64>(id);
     m_rpc->call(
         QStringLiteral("GetFarmInfo"), params,
-        [this](const QJsonObject &info) {
+        RpcUi::guarded(this, [this](const QJsonObject &info) {
             auto *dialog = new QDialog(this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             // SM_FMINFO_CAPTION
@@ -150,8 +150,8 @@ void FarmStatusDialog::onShowMemberInfo()
             layout->addLayout(form);
             layout->addWidget(buttonBox);
             dialog->open();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタメンバ情報の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタメンバ情報の取得"), error); }));
 }
 
 void FarmStatusDialog::buildMemberView()
@@ -193,7 +193,7 @@ void FarmStatusDialog::buildMemberView()
 
     m_rpc->call(
         QStringLiteral("GetFarmConnectionStatus"), {},
-        [this, ipLabel, portLabel, statusLabel, errorLabel, startLabel, firstLabel, currentLabel, tryLabel, connectedLabel,
+        RpcUi::guarded(this, [this, ipLabel, portLabel, statusLabel, errorLabel, startLabel, firstLabel, currentLabel, tryLabel, connectedLabel,
          failedLabel](const QJsonObject &status) {
             ipLabel->setText(status.value("Ip_ip").toString());
             portLabel->setText(QString::number(status.value("Port_u32").toInt()));
@@ -207,6 +207,6 @@ void FarmStatusDialog::buildMemberView()
             tryLabel->setText(QString::number(status.value("NumTry_u32").toInt()));
             connectedLabel->setText(QString::number(status.value("NumConnected_u32").toInt()));
             failedLabel->setText(QString::number(status.value("NumFailed_u32").toInt()));
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタコントローラへの接続状態の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("クラスタコントローラへの接続状態の取得"), error); }));
 }

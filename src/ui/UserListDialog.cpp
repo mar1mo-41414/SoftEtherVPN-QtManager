@@ -3,6 +3,7 @@
 #include "InfoTableDialog.h"
 #include "UserEditDialog.h"
 
+#include "util/RpcUiHelpers.h"
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
@@ -139,7 +140,7 @@ void UserListDialog::reload()
 {
     m_rpc->enumUser(
         m_hubName,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             QJsonArray userList = result.value("UserList").toArray();
             if (!m_groupFilter.isEmpty()) {
                 QJsonArray filtered;
@@ -170,11 +171,11 @@ void UserListDialog::reload()
                 m_table->setColumnWidth(column, qMax(m_table->columnWidth(column), 110));
             }
             updateButtons();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ユーザー一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void UserListDialog::onCreate()
@@ -187,11 +188,11 @@ void UserListDialog::onCreate()
     QJsonObject params = dialog.toRpcParams();
     params["HubName_str"] = m_hubName;
     m_rpc->createUser(
-        params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ユーザーの作成に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void UserListDialog::onEdit()
@@ -203,7 +204,7 @@ void UserListDialog::onEdit()
 
     m_rpc->getUser(
         m_hubName, userName,
-        [this](const QJsonObject &user) {
+        RpcUi::guarded(this, [this](const QJsonObject &user) {
             auto *dialog = new UserEditDialog(m_rpc, m_hubName, /*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->setUser(user);
@@ -211,20 +212,20 @@ void UserListDialog::onEdit()
                 QJsonObject params = dialog->toRpcParams();
                 params["HubName_str"] = m_hubName;
                 m_rpc->setUser(
-                    params, [this](const QJsonObject &) { reload(); },
-                    [this](const RpcError &error) {
+                    params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+                    RpcUi::guarded(this, [this](const RpcError &error) {
                         QMessageBox::warning(this, tr("エラー"),
                                               tr("ユーザーの設定変更に失敗しました: %1 (code %2)")
                                                   .arg(error.message)
                                                   .arg(error.code));
-                    });
+                    }));
             });
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ユーザーの設定取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void UserListDialog::onDelete()
@@ -245,11 +246,11 @@ void UserListDialog::onDelete()
     }
 
     m_rpc->deleteUser(
-        m_hubName, userName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, userName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ユーザーの削除に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void UserListDialog::onStatus()

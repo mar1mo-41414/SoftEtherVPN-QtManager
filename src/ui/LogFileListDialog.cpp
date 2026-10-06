@@ -1,5 +1,6 @@
 #include "LogFileListDialog.h"
 
+#include "util/RpcUiHelpers.h"
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
@@ -91,7 +92,7 @@ void LogFileListDialog::onSelectionChanged()
 void LogFileListDialog::reload()
 {
     m_rpc->enumLogFile(
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray files = result.value("LogFiles").toArray();
             m_table->setRowCount(files.size());
             for (int row = 0; row < files.size(); ++row) {
@@ -105,11 +106,11 @@ void LogFileListDialog::reload()
             }
             m_table->resizeColumnsToContents();
             onSelectionChanged();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ログファイル一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void LogFileListDialog::onDownload()
@@ -143,7 +144,7 @@ void LogFileListDialog::downloadChunk(const QString &filePath, quint32 fileSize,
 {
     m_rpc->readLogFile(
         filePath, offset,
-        [this, filePath, fileSize, buffer, savePath](const QJsonObject &result) {
+        RpcUi::guarded(this, [this, filePath, fileSize, buffer, savePath](const QJsonObject &result) {
             const QByteArray chunk = QByteArray::fromBase64(result.value("Buffer_bin").toString().toUtf8());
             buffer->append(chunk);
 
@@ -158,9 +159,9 @@ void LogFileListDialog::downloadChunk(const QString &filePath, quint32 fileSize,
             }
 
             downloadChunk(filePath, fileSize, nextOffset, buffer, savePath);
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ログファイルのダウンロードに失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }

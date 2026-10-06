@@ -1,5 +1,6 @@
 #include "MacTableDialog.h"
 
+#include "util/RpcUiHelpers.h"
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
@@ -68,7 +69,7 @@ void MacTableDialog::reload()
 {
     m_rpc->enumMacTable(
         m_hubName,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray macTable = result.value("MacTable").toArray();
 
             m_table->setRowCount(0);
@@ -98,13 +99,13 @@ void MacTableDialog::reload()
             }
 
             m_table->resizeColumnsToContents();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("MAC アドレステーブルの取得に失敗しました: %1 (code %2)")
                                       .arg(error.message)
                                       .arg(error.code));
-        });
+        }));
 }
 
 void MacTableDialog::onDelete()
@@ -116,11 +117,11 @@ void MacTableDialog::onDelete()
     const quint32 key = static_cast<quint32>(m_table->item(selected.first()->row(), 0)->data(Qt::UserRole).toUInt());
 
     m_rpc->deleteMacTable(
-        m_hubName, key, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, key, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("MAC アドレステーブルエントリの削除に失敗しました: %1 (code %2)")
                                       .arg(error.message)
                                       .arg(error.code));
-        });
+        }));
 }

@@ -58,12 +58,12 @@ HubMessageDialog::HubMessageDialog(VpnServerRpc *rpc, QString hubName, QWidget *
     params["HubName_str"] = m_hubName;
     m_rpc->call(
         QStringLiteral("GetHubMsg"), params,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QString message = QString::fromUtf8(QByteArray::fromBase64(result.value("Msg_bin").toString().toLatin1()));
             m_useCheck->setChecked(!message.isEmpty());
             m_messageEdit->setPlainText(message);
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("メッセージの取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("メッセージの取得"), error); }));
 }
 
 void HubMessageDialog::onOk()
@@ -73,6 +73,6 @@ void HubMessageDialog::onOk()
     const QString message = m_useCheck->isChecked() ? m_messageEdit->toPlainText() : QString();
     params["Msg_bin"] = QString::fromLatin1(message.toUtf8().toBase64());
     m_rpc->call(
-        QStringLiteral("SetHubMsg"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("メッセージの保存"), error); });
+        QStringLiteral("SetHubMsg"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("メッセージの保存"), error); }));
 }

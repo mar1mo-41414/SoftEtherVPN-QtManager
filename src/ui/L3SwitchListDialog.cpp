@@ -112,7 +112,7 @@ void L3SwitchListDialog::reload()
 {
     m_rpc->call(
         QStringLiteral("EnumL3Switch"), {},
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("L3SWList").toArray();
             m_table->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -129,8 +129,8 @@ void L3SwitchListDialog::reload()
             }
             m_table->resizeColumnsToContents();
             onSelectionChanged();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチ一覧の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチ一覧の取得"), error); }));
 }
 
 void L3SwitchListDialog::onAdd()
@@ -164,8 +164,8 @@ void L3SwitchListDialog::onAdd()
     QJsonObject params;
     params["Name_str"] = nameEdit->text().trimmed();
     m_rpc->call(
-        QStringLiteral("AddL3Switch"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの作成"), error); });
+        QStringLiteral("AddL3Switch"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの作成"), error); }));
 }
 
 void L3SwitchListDialog::onEdit()
@@ -197,8 +197,8 @@ void L3SwitchListDialog::onDelete()
     QJsonObject params;
     params["Name_str"] = name;
     m_rpc->call(
-        QStringLiteral("DelL3Switch"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの削除"), error); });
+        QStringLiteral("DelL3Switch"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの削除"), error); }));
 }
 
 void L3SwitchListDialog::onStart()
@@ -210,8 +210,8 @@ void L3SwitchListDialog::onStart()
     QJsonObject params;
     params["Name_str"] = name;
     m_rpc->call(
-        QStringLiteral("StartL3Switch"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作開始"), error); });
+        QStringLiteral("StartL3Switch"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作開始"), error); }));
 }
 
 void L3SwitchListDialog::onStop()
@@ -223,6 +223,6 @@ void L3SwitchListDialog::onStop()
     QJsonObject params;
     params["Name_str"] = name;
     m_rpc->call(
-        QStringLiteral("StopL3Switch"), params, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作停止"), error); });
+        QStringLiteral("StopL3Switch"), params, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("仮想レイヤ 3 スイッチの動作停止"), error); }));
 }

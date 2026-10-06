@@ -1,5 +1,7 @@
 #include "LocalBridgeDialog.h"
 
+#include "util/RpcUiHelpers.h"
+
 #include <QAbstractItemView>
 #include <QComboBox>
 #include <QFormLayout>
@@ -120,7 +122,7 @@ void LocalBridgeDialog::onBridgeTypeToggled(bool usePhysical)
 void LocalBridgeDialog::loadEthernetList()
 {
     m_rpc->enumEthernet(
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray ethList = result.value("EthList").toArray();
             for (const QJsonValue &value : ethList) {
                 const QJsonObject eth = value.toObject();
@@ -129,17 +131,17 @@ void LocalBridgeDialog::loadEthernetList()
                 m_ethernetCombo->addItem(description.isEmpty() ? deviceName : tr("%1 (%2)").arg(deviceName, description),
                                           deviceName);
             }
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("LAN カード一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void LocalBridgeDialog::reload()
 {
     m_rpc->enumLocalBridge(
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray list = result.value("LocalBridgeList").toArray();
             m_table->setRowCount(list.size());
             for (int row = 0; row < list.size(); ++row) {
@@ -153,11 +155,11 @@ void LocalBridgeDialog::reload()
                 m_table->setItem(row, 3, new QTableWidgetItem(online ? (active ? tr("動作中") : tr("エラー発生")) : tr("オフライン")));
             }
             m_table->resizeColumnsToContents();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ローカルブリッジ一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void LocalBridgeDialog::onAdd()
@@ -176,11 +178,11 @@ void LocalBridgeDialog::onAdd()
     }
 
     m_rpc->addLocalBridge(
-        deviceName, hubName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        deviceName, hubName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ローカルブリッジの追加に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void LocalBridgeDialog::onDelete()
@@ -204,9 +206,9 @@ void LocalBridgeDialog::onDelete()
     }
 
     m_rpc->deleteLocalBridge(
-        deviceName, hubName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        deviceName, hubName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ローカルブリッジの削除に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }

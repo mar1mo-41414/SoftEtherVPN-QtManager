@@ -90,7 +90,7 @@ HubRadiusDialog::HubRadiusDialog(VpnServerRpc *rpc, QString hubName, QWidget *pa
     params["HubName_str"] = m_hubName;
     m_rpc->call(
         QStringLiteral("GetHubRadius"), params,
-        [this](const QJsonObject &radius) {
+        RpcUi::guarded(this, [this](const QJsonObject &radius) {
             const QString host = radius.value("RadiusServerName_str").toString();
             m_useCheck->setChecked(!host.isEmpty());
             m_hostEdit->setText(host);
@@ -99,8 +99,8 @@ HubRadiusDialog::HubRadiusDialog(VpnServerRpc *rpc, QString hubName, QWidget *pa
             m_secretConfirmEdit->setText(radius.value("RadiusSecret_str").toString());
             m_retrySpin->setValue(qBound(500, radius.value("RadiusRetryInterval_u32").toInt(500), 9999));
             updateState();
-        },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("認証サーバー設定の取得"), error); });
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("認証サーバー設定の取得"), error); }));
 }
 
 void HubRadiusDialog::updateState()
@@ -122,6 +122,6 @@ void HubRadiusDialog::onOk()
     params["RadiusSecret_str"] = use ? m_secretEdit->text() : QString();
     params["RadiusRetryInterval_u32"] = m_retrySpin->value();
     m_rpc->call(
-        QStringLiteral("SetHubRadius"), params, [this](const QJsonObject &) { accept(); },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("認証サーバー設定の保存"), error); });
+        QStringLiteral("SetHubRadius"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("認証サーバー設定の保存"), error); }));
 }

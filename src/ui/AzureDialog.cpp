@@ -106,7 +106,7 @@ void AzureDialog::reload()
     QPointer<AzureDialog> guard(this);
     m_rpc->call(
         QStringLiteral("GetAzureStatus"), {},
-        [this, guard](const QJsonObject &result) {
+        RpcUi::guarded(this, [this, guard](const QJsonObject &result) {
             if (!guard) {
                 return;
             }
@@ -119,18 +119,18 @@ void AzureDialog::reload()
             m_statusLabel->setText(!enabled ? QString()
                                             : (result.value("IsConnected_bool").toBool() ? tr("状態: クラウドに接続完了")
                                                                                           : tr("状態: クラウドに未接続")));
-        },
+        }),
         [](const RpcError &) {});
 
     m_rpc->call(
         QStringLiteral("GetDDnsClientStatus"), {},
-        [this, guard](const QJsonObject &status) {
+        RpcUi::guarded(this, [this, guard](const QJsonObject &status) {
             if (!guard) {
                 return;
             }
             const QString hostName = status.value("CurrentHostName_str").toString();
             m_hostNameLabel->setText(hostName.isEmpty() ? tr("(なし)") : hostName + QStringLiteral(".vpnazure.net"));
-        },
+        }),
         [](const RpcError &) {});
 }
 
@@ -154,19 +154,19 @@ void AzureDialog::onSetStatus()
     m_settingStatus = true;
     m_rpc->call(
         QStringLiteral("SetAzureStatus"), params,
-        [this, guard = QPointer<AzureDialog>(this)](const QJsonObject &) {
+        RpcUi::guarded(this, [this, guard = QPointer<AzureDialog>(this)](const QJsonObject &) {
             if (!guard) {
                 return;
             }
             m_settingStatus = false;
             reload();
-        },
-        [this, guard = QPointer<AzureDialog>(this)](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this, guard = QPointer<AzureDialog>(this)](const RpcError &error) {
             if (!guard) {
                 return;
             }
             m_settingStatus = false;
             RpcUi::showError(this, tr("VPN Azure 設定の変更"), error);
             reload();
-        });
+        }));
 }

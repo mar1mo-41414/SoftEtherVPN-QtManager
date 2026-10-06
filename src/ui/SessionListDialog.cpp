@@ -3,6 +3,7 @@
 #include "MacTableDialog.h"
 #include "SessionStatusDialog.h"
 
+#include "util/RpcUiHelpers.h"
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
@@ -116,7 +117,7 @@ void SessionListDialog::reload()
 {
     m_rpc->enumSession(
         m_hubName,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray sessionList = result.value("SessionList").toArray();
             m_table->setRowCount(sessionList.size());
             for (int row = 0; row < sessionList.size(); ++row) {
@@ -142,11 +143,11 @@ void SessionListDialog::reload()
             }
             m_table->resizeColumnsToContents();
             onSelectionChanged();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("セッション一覧の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void SessionListDialog::onShowStatus()
@@ -157,15 +158,15 @@ void SessionListDialog::onShowStatus()
     }
     m_rpc->getSessionStatus(
         m_hubName, sessionName,
-        [this, sessionName](const QJsonObject &status) {
+        RpcUi::guarded(this, [this, sessionName](const QJsonObject &status) {
             auto *dialog = new SessionStatusDialog(sessionName, status, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->open();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("セッション情報の取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void SessionListDialog::onDisconnect()
@@ -187,11 +188,11 @@ void SessionListDialog::onDisconnect()
     }
 
     m_rpc->deleteSession(
-        m_hubName, sessionName, [this](const QJsonObject &) { reload(); },
-        [this](const RpcError &error) {
+        m_hubName, sessionName, RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("セッションの切断に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
 
 void SessionListDialog::onSessionMacTable()

@@ -1,5 +1,6 @@
 #include "DhcpTableDialog.h"
 
+#include "util/RpcUiHelpers.h"
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
@@ -55,7 +56,7 @@ void DhcpTableDialog::reload()
 {
     m_rpc->enumDHCP(
         m_hubName,
-        [this](const QJsonObject &result) {
+        RpcUi::guarded(this, [this](const QJsonObject &result) {
             const QJsonArray dhcpTable = result.value("DhcpTable").toArray();
             m_table->setRowCount(dhcpTable.size());
             for (int row = 0; row < dhcpTable.size(); ++row) {
@@ -67,9 +68,9 @@ void DhcpTableDialog::reload()
                 m_table->setItem(row, 4, new QTableWidgetItem(SoftEtherLabels::dateTime(entry.value("ExpireTime_dt").toString())));
             }
             m_table->resizeColumnsToContents();
-        },
-        [this](const RpcError &error) {
+        }),
+        RpcUi::guarded(this, [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
                                   tr("DHCP リーステーブルの取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
-        });
+        }));
 }
