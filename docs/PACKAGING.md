@@ -73,5 +73,8 @@ macOS Intel (x86_64) 版はGitHub Actionsのホスト型ランナーがIntel Mac
 
 ## バージョン番号
 
-現状`CPACK_PACKAGE_VERSION`は`CMakeLists.txt`内に`0.1.0`固定で書いてある。
-リリースを切るようになったらGitタグ等と連動させることを検討する。
+`CMakeLists.txt`の`project(SoftEtherVPN-QtManager VERSION x.y.z ...)`が単一の情報源。
+ここから`src/Version.h.in`経由でビルド時に`Version.h`が生成され(`SOFTETHERVPN_QTMANAGER_VERSION`マクロ)、
+アプリ内のバージョン情報ダイアログ・`CPACK_PACKAGE_VERSION`・macOSバンドルの
+`CFBundleShortVersionString`/`CFBundleVersion`すべてがここを参照する。リリースの際は
+このバージョンをGitタグ(`vX.Y.Z`)と合わせて更新すること。

@@ -1,0 +1,3 @@
+#pragma once
+
+#define SOFTETHERVPN_QTMANAGER_VERSION "@PROJECT_VERSION@"

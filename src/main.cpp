@@ -1,4 +1,5 @@
 #include "ui/MainWindow.h"
+#include "Version.h"
 
 #include <QApplication>
 #include <QFormLayout>
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("SoftEtherVPN-QtManager"));
     app.setOrganizationName(QStringLiteral("SoftEtherVPN-QtManager"));
+    app.setApplicationVersion(QStringLiteral(SOFTETHERVPN_QTMANAGER_VERSION));
     app.setStyle(new FormGrowStyle(app.style()->name()));
 
     // UI文言の原文(tr()の第一引数)は日本語。システムのロケールが日本語以外であれば

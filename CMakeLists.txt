@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(SoftEtherVPN-QtManager LANGUAGES CXX)
+project(SoftEtherVPN-QtManager VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,6 +10,10 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets Network LinguistTools)
 
 qt_standard_project_setup()
+
+# アプリのバージョン番号 (CMakeのproject(VERSION)が単一の情報源)。
+# バージョン情報ダイアログ等から参照できるよう、ビルド時にヘッダへ埋め込む。
+configure_file(src/Version.h.in ${CMAKE_CURRENT_BINARY_DIR}/Version.h @ONLY)
 
 qt_add_executable(SoftEtherVPN-QtManager
     src/main.cpp
@@ -144,7 +148,7 @@ qt_add_executable(SoftEtherVPN-QtManager
     packaging/icon/SoftEtherVPN-QtManager.icns
 )
 
-target_include_directories(SoftEtherVPN-QtManager PRIVATE src)
+target_include_directories(SoftEtherVPN-QtManager PRIVATE src ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(SoftEtherVPN-QtManager PRIVATE
     Qt6::Widgets
@@ -159,6 +163,8 @@ set_target_properties(SoftEtherVPN-QtManager PROPERTIES
     MACOSX_BUNDLE ON
     MACOSX_BUNDLE_ICON_FILE "SoftEtherVPN-QtManager.icns"
     MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.mar1mo-41414.softethervpn-qtmanager"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
     WIN32_EXECUTABLE ON
 )
 
@@ -187,7 +193,7 @@ if(UNIX AND NOT APPLE)
     set(CPACK_PACKAGE_NAME "softethervpn-qtmanager")
     set(CPACK_PACKAGE_VENDOR "SoftEtherVPN-QtManager project")
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "SoftEther VPN Server administration GUI for Mac/Linux")
-    set(CPACK_PACKAGE_VERSION "0.1.0")
+    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
     set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "SoftEtherVPN-QtManager project <noreply@example.invalid>")
     set(CPACK_DEBIAN_PACKAGE_SECTION "net")

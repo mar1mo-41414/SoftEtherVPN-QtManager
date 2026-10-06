@@ -6,6 +6,8 @@
 
 #include "util/RpcUiHelpers.h"
 
+#include "Version.h"
+
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QGridLayout>
@@ -257,9 +259,12 @@ void ConnectionListPage::onAbout()
 {
     // B_ABOUT
     QMessageBox::about(this, tr("バージョン情報"),
-                        tr("<b>SoftEtherVPN-QtManager</b><br><br>"
-                           "SoftEther VPN Server の JSON-RPC 管理 API を利用する、Qt (%1) 製のクロスプラットフォーム管理ツールです。<br>"
+                        tr("<b>SoftEtherVPN-QtManager</b> v%1<br><br>"
+                           "SoftEther VPN Server の JSON-RPC 管理 API を利用する、Qt (%2) 製のクロスプラットフォーム管理ツールです。<br>"
                            "公式の VPN Server Manager (Windows 専用) の画面構成を参考にしています。<br><br>"
+                           "<a href=\"https://github.com/mar1mo-41414/SoftEtherVPN-QtManager\">"
+                           "github.com/mar1mo-41414/SoftEtherVPN-QtManager</a><br><br>"
                            "SoftEther VPN は Apache License 2.0 で公開されています。")
+                            .arg(QStringLiteral(SOFTETHERVPN_QTMANAGER_VERSION))
                             .arg(QString::fromLatin1(qVersion())));
 }
