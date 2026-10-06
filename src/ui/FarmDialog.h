@@ -5,6 +5,7 @@
 #include <QDialog>
 
 class QCheckBox;
+class QLabel;
 class QLineEdit;
 class QRadioButton;
 class QSpinBox;
@@ -35,4 +36,5 @@ private:
     QLineEdit *m_passwordEdit;
     QSpinBox *m_weightSpin;
     QCheckBox *m_controllerOnlyCheck;
+    QLabel *m_currentModeLabel;
 };
