@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=SoftEtherVPN-QtManager
+GenericName=SoftEther VPN Server Manager
+Comment=SoftEther VPN Server administration GUI for Mac/Linux
+Exec=SoftEtherVPN-QtManager
+# 専用アイコンは未作成。freedesktopの標準アイコン名(network-vpn)にフォールバック。
+Icon=network-vpn
+Terminal=false
+Categories=Network;System;

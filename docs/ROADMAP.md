@@ -75,6 +75,10 @@
   - [x] ローカライズ基盤: Qt Linguist (lupdate/lrelease) 導入、`tools/gen_translations.py`で
         strtable_ja/en.stbから自動翻訳流し込み (1634件中1296件=約79%)、OSロケール連動の自動切替。
         残りはアプリ独自文言・長文説明文などで継続作業中
+  - [x] パッケージング: macOS `.app`/zip (`packaging/macos/build-app.sh`、実機確認済み)、
+        Linux `.deb` (CPack) / AppImage (`packaging/linux/build-appimage.sh`、
+        開発機がmacOSのみのためLinux側は未検証・ベストエフォート)。詳細は
+        [docs/PACKAGING.md](PACKAGING.md)
   - [x] レイアウト再現(進行中): 接続一覧/接続編集(+プロキシ)/サーバー管理画面(D_SM_SERVER)/
         仮想HUB管理画面(D_SM_HUB)/ユーザー(6認証方式・有効期限・ポリシー)/グループ/
         セキュリティポリシー/アクセスリスト(IPv4/IPv6・MAC・TCP状態・リダイレクト・遅延/ロス、

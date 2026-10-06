@@ -166,3 +166,21 @@ qt_add_translations(SoftEtherVPN-QtManager
     LUPDATE_SOURCE_TARGETS SoftEtherVPN-QtManager
 )
 
+# パッケージング (Linux .deb): `cmake --build build --target package` または
+# `cpack` で生成。詳細は docs/PACKAGING.md 参照。macOS/Windowsではこのブロックは無効。
+if(UNIX AND NOT APPLE)
+    install(TARGETS SoftEtherVPN-QtManager RUNTIME DESTINATION bin)
+    install(FILES packaging/linux/softethervpn-qtmanager.desktop
+        DESTINATION share/applications)
+
+    set(CPACK_PACKAGE_NAME "softethervpn-qtmanager")
+    set(CPACK_PACKAGE_VENDOR "SoftEtherVPN-QtManager project")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "SoftEther VPN Server administration GUI for Mac/Linux")
+    set(CPACK_PACKAGE_VERSION "0.1.0")
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "SoftEtherVPN-QtManager project <noreply@example.invalid>")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    include(CPack)
+endif()
+

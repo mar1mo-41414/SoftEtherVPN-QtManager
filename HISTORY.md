@@ -169,3 +169,21 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
   実機で英語ロケール表示を確認済み (接続一覧・サーバー管理画面はほぼ全訳)。
 - 残りの未訳文字列は `i18n/SoftEtherVPN-QtManager_en.ts` をQt Linguistで直接編集するか、
   `tools/gen_translations.py` に追記して埋めていく想定 (継続作業)。
+
+## 2026-10-06 パッケージング (macOS .app / Linux .deb・AppImage)
+
+- macOS: `packaging/macos/build-app.sh` でReleaseビルド+`macdeployqt`によるQt
+  フレームワーク同梱を自動化。開発機(Apple Silicon, Qt 6.11.1 Homebrew版)で実際に
+  生成した`.app`が自己完結して起動することを確認済み(macdeployqtが無関係な
+  QtPdf/QtSvg/QtVirtualKeyboard等のプラグインについて出す`ERROR: Cannot resolve rpath`
+  は実害のない警告と判明、最終的な`.app`はotoolで全依存が`@executable_path/../Frameworks`
+  配下に解決されていることを確認)。未署名のためGatekeeper警告が出る点はdocsに明記。
+- Linux: CMakeのCPack (DEBジェネレータ) を`UNIX AND NOT APPLE`限定で`CMakeLists.txt`に
+  追加 (`cmake --build build-release --target package`)。デスクトップエントリ
+  `packaging/linux/softethervpn-qtmanager.desktop`を追加 (専用アイコン未作成のため
+  `Icon=network-vpn`のfreedesktop標準アイコン名にフォールバック)。
+  AppImageは`packaging/linux/build-appimage.sh`でlinuxdeploy+linuxdeploy-plugin-qtを
+  自動取得して生成する想定のスクリプトを用意。
+- 開発機がmacOSのみのため、Linux側(.deb/AppImageとも)は実行確認ができておらず
+  ベストエフォート・未検証である旨を`docs/PACKAGING.md`に明記した。
+- `build-release/`・`dist/`・`.packaging-tools/`・`*.deb`・`*.AppImage`を`.gitignore`に追加。

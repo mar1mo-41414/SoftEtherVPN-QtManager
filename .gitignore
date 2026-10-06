@@ -3,9 +3,14 @@ start-note.md
 
 # Build outputs
 build/
+build-release/
 cmake-build-*/
 *.app
 *.dSYM/
+dist/
+.packaging-tools/
+*.deb
+*.AppImage
 
 # CMake
 CMakeCache.txt

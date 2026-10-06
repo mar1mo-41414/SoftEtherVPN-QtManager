@@ -36,6 +36,9 @@ cmake --build build
 
 ビルドしたアプリは `build/SoftEtherVPN-QtManager`（macOSは `.app` バンドル）です。
 
+配布用パッケージ（macOS `.app`/zip、Linux `.deb`・AppImage）の作り方は
+[docs/PACKAGING.md](docs/PACKAGING.md) を参照してください。
+
 画面確認だけしたい場合は、実サーバーの代わりに付属のモックサーバー
 （[tools/README.md](tools/README.md)）を使えます。
 
