@@ -19,12 +19,24 @@ permissions:
 jobs:
   macos-arm64:
     runs-on: macos-14
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Install Qt
         run: brew install qt cmake
-      - name: Build .app
-        run: packaging/macos/build-app.sh
+      - name: Configure
+        timeout-minutes: 5
+        run: cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        timeout-minutes: 15
+        run: cmake --build build-release --config Release -j
+      - name: Deploy Qt frameworks (macdeployqt) + zip
+        timeout-minutes: 10
+        run: |
+          mkdir -p dist/macos
+          cp -R build-release/SoftEtherVPN-QtManager.app dist/macos/
+          macdeployqt dist/macos/SoftEtherVPN-QtManager.app -verbose=2
+          (cd dist/macos && ditto -c -k --sequesterRsrc --keepParent SoftEtherVPN-QtManager.app SoftEtherVPN-QtManager-macos.zip)
       - uses: actions/upload-artifact@v4
         with:
           name: macos-arm64
@@ -39,6 +51,7 @@ jobs:
           - runner: ubuntu-24.04-arm
             arch: aarch64
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
