@@ -1,5 +1,6 @@
 #include "UserEditDialog.h"
 #include "CertInfoDialog.h"
+#include "GroupListDialog.h"
 #include "PolicyDialog.h"
 
 #include "util/RpcUiHelpers.h"
@@ -27,8 +28,6 @@
 #include <QTimeEdit>
 #include <QVBoxLayout>
 
-#include <optional>
-
 namespace {
 
 // 公式Managerがパスワードを変更しないときに表示する伏せ字。
@@ -47,81 +46,6 @@ QLabel *description(const QString &text, QWidget *parent)
     auto *label = new QLabel(text, parent);
     label->setWordWrap(true);
     return label;
-}
-
-// 「グループの参照」: グループ一覧から1つ選ぶ。キャンセルは std::nullopt、「なし」は空文字列。
-std::optional<QString> chooseGroup(VpnServerRpc *rpc, const QString &hubName, const QString &current, QWidget *parent)
-{
-    QDialog dialog(parent);
-    // SM_SELECT_ALT_GROUP
-    dialog.setWindowTitle(QObject::tr("グループを選択"));
-    auto *list = new QListWidget(&dialog);
-    auto *selectButton = new QPushButton(QObject::tr("選択(&S)"), &dialog);
-    auto *noneButton = new QPushButton(QObject::tr("なし(&N)"), &dialog);
-    auto *cancelButton = new QPushButton(QObject::tr("キャンセル"), &dialog);
-    selectButton->setEnabled(false);
-    selectButton->setDefault(true);
-
-    QString result;
-    bool accepted = false;
-    QObject::connect(list, &QListWidget::itemSelectionChanged, &dialog,
-                     [list, selectButton]() { selectButton->setEnabled(!list->selectedItems().isEmpty()); });
-    QObject::connect(selectButton, &QPushButton::clicked, &dialog, [&]() {
-        if (!list->selectedItems().isEmpty()) {
-            result = list->selectedItems().first()->data(Qt::UserRole).toString();
-            accepted = true;
-            dialog.accept();
-        }
-    });
-    QObject::connect(list, &QListWidget::itemDoubleClicked, selectButton, &QPushButton::click);
-    QObject::connect(noneButton, &QPushButton::clicked, &dialog, [&]() {
-        result.clear();
-        accepted = true;
-        dialog.accept();
-    });
-    QObject::connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-    auto *buttons = new QHBoxLayout;
-    buttons->addStretch();
-    buttons->addWidget(selectButton);
-    buttons->addWidget(noneButton);
-    buttons->addWidget(cancelButton);
-    auto *layout = new QVBoxLayout(&dialog);
-    layout->addWidget(list);
-    layout->addLayout(buttons);
-    dialog.resize(360, 320);
-
-    QPointer<QListWidget> guard(list);
-    rpc->enumGroup(
-        hubName,
-        [guard, current](const QJsonObject &result) {
-            if (!guard) {
-                return;
-            }
-            const QJsonArray groups = result.value("GroupList").toArray();
-            for (const QJsonValue &value : groups) {
-                const QJsonObject group = value.toObject();
-                const QString name = group.value("Name_str").toString();
-                const QString realname = group.value("Realname_utf").toString();
-                auto *item = new QListWidgetItem(realname.isEmpty() ? name : QStringLiteral("%1 (%2)").arg(name, realname));
-                item->setData(Qt::UserRole, name);
-                guard->addItem(item);
-                if (name == current) {
-                    item->setSelected(true);
-                }
-            }
-        },
-        [guard, parent](const RpcError &error) {
-            if (guard) {
-                RpcUi::showError(parent, QObject::tr("グループ一覧の取得"), error);
-            }
-        });
-
-    dialog.exec();
-    if (!accepted) {
-        return std::nullopt;
-    }
-    return result;
 }
 
 } // namespace
@@ -499,9 +423,10 @@ void UserEditDialog::accept()
 
 void UserEditDialog::onSelectGroup()
 {
-    const std::optional<QString> chosen = chooseGroup(m_rpc, m_hubName, m_groupEdit->text().trimmed(), this);
-    if (chosen) {
-        m_groupEdit->setText(*chosen);
+    // 公式Managerと同様、グループの管理画面を選択モードで開く。
+    GroupListDialog dialog(m_rpc, m_hubName, this, /*selectMode=*/true);
+    if (dialog.exec() == QDialog::Accepted) {
+        m_groupEdit->setText(dialog.selectedGroup());
     }
 }
 

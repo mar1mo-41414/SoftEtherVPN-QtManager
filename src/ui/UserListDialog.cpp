@@ -1,4 +1,5 @@
 #include "UserListDialog.h"
+#include "GroupListDialog.h"
 #include "InfoTableDialog.h"
 #include "UserEditDialog.h"
 
@@ -16,11 +17,13 @@
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
 
-UserListDialog::UserListDialog(VpnServerRpc *rpc, QString hubName, QWidget *parent, QString groupFilter)
+UserListDialog::UserListDialog(VpnServerRpc *rpc, QString hubName, QWidget *parent, QString groupFilter,
+                               bool selectMode)
     : QDialog(parent)
     , m_rpc(rpc)
     , m_hubName(std::move(hubName))
     , m_groupFilter(std::move(groupFilter))
+    , m_selectMode(selectMode)
 {
     // D_SM_USER CAPTION
     setWindowTitle(m_groupFilter.isEmpty()
@@ -29,7 +32,10 @@ UserListDialog::UserListDialog(VpnServerRpc *rpc, QString hubName, QWidget *pare
                        : tr("ユーザーの管理 (グループ %1 に所属しているユーザーのみ表示)").arg(m_groupFilter));
 
     // S_TITLE
-    auto *titleLabel = new QLabel(tr("仮想 HUB \"%1\" に登録されているユーザーは以下の通りです。").arg(m_hubName), this);
+    auto *titleLabel = new QLabel(
+        m_selectMode ? tr("ユーザーを選択してください。")
+                     : tr("仮想 HUB \"%1\" に登録されているユーザーは以下の通りです。").arg(m_hubName),
+        this);
     titleLabel->setWordWrap(true);
 
     m_table = new QTableWidget(this);
@@ -42,22 +48,25 @@ UserListDialog::UserListDialog(VpnServerRpc *rpc, QString hubName, QWidget *pare
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
-    connect(m_table, &QTableWidget::cellDoubleClicked, this, &UserListDialog::onEdit);
+    connect(m_table, &QTableWidget::cellDoubleClicked, this,
+            m_selectMode ? &UserListDialog::onPick : &UserListDialog::onEdit);
 
     // B_CREATE / IDOK(編集) / B_STATUS / B_DELETE / B_REFRESH / IDCANCEL
     auto *createButton = new QPushButton(tr("新規作成(&C)"), this);
-    m_editButton = new QPushButton(tr("編集(&E)"), this);
+    // 選択モードでは 編集 → 選択、削除 → グループを選択、閉じる → 選択しない
+    m_editButton = new QPushButton(m_selectMode ? tr("選択(&S)") : tr("編集(&E)"), this);
     m_statusButton = new QPushButton(tr("ユーザー情報表示(&V)"), this);
-    m_deleteButton = new QPushButton(tr("削除(&D)"), this);
+    m_deleteButton = new QPushButton(m_selectMode ? tr("グループを選択(&G)...") : tr("削除(&D)"), this);
     auto *refreshButton = new QPushButton(tr("最新の状態に更新(&R)"), this);
-    auto *closeButton = new QPushButton(tr("閉じる(&X)"), this);
+    auto *closeButton = new QPushButton(m_selectMode ? tr("選択しない(&N)") : tr("閉じる(&X)"), this);
 
     connect(createButton, &QPushButton::clicked, this, &UserListDialog::onCreate);
-    connect(m_editButton, &QPushButton::clicked, this, &UserListDialog::onEdit);
+    connect(m_editButton, &QPushButton::clicked, this, m_selectMode ? &UserListDialog::onPick : &UserListDialog::onEdit);
     connect(m_statusButton, &QPushButton::clicked, this, &UserListDialog::onStatus);
-    connect(m_deleteButton, &QPushButton::clicked, this, &UserListDialog::onDelete);
+    connect(m_deleteButton, &QPushButton::clicked, this,
+            m_selectMode ? &UserListDialog::onPickGroup : &UserListDialog::onDelete);
     connect(refreshButton, &QPushButton::clicked, this, &UserListDialog::reload);
-    connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
+    connect(closeButton, &QPushButton::clicked, this, m_selectMode ? &UserListDialog::onPickNone : &QDialog::accept);
     connect(m_table, &QTableWidget::itemSelectionChanged, this, &UserListDialog::updateButtons);
 
     auto *buttonLayout = new QHBoxLayout;
@@ -84,7 +93,37 @@ void UserListDialog::updateButtons()
     const bool selected = !m_table->selectedItems().isEmpty();
     m_editButton->setEnabled(selected);
     m_statusButton->setEnabled(selected);
-    m_deleteButton->setEnabled(selected);
+    // 選択モードの「グループを選択」は行の選択に関係なく使える。
+    m_deleteButton->setEnabled(m_selectMode || selected);
+}
+
+void UserListDialog::onPick()
+{
+    const QString userName = selectedUserName();
+    if (userName.isEmpty()) {
+        return;
+    }
+    m_pickedName = userName;
+    m_pickedIsGroup = false;
+    accept();
+}
+
+void UserListDialog::onPickNone()
+{
+    m_pickedName.clear();
+    m_pickedIsGroup = false;
+    accept();
+}
+
+void UserListDialog::onPickGroup()
+{
+    GroupListDialog dialog(m_rpc, m_hubName, this, /*selectMode=*/true);
+    if (dialog.exec() != QDialog::Accepted || dialog.selectedGroup().isEmpty()) {
+        return;
+    }
+    m_pickedName = dialog.selectedGroup();
+    m_pickedIsGroup = true;
+    accept();
 }
 
 QString UserListDialog::selectedUserName() const
