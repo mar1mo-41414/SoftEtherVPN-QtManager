@@ -26,7 +26,7 @@ ConfigEditDialog::ConfigEditDialog(VpnServerRpc *rpc, QString serverName, QWidge
     infoLabel->setWordWrap(true);
 
     m_text = new QPlainTextEdit(this);
-    m_text->setReadOnly(true);
+    m_text->setReadOnly(false); // 公式Managerと同様に編集可能 (反映は「ファイルに保存」→「ファイルからインポートして書き込み」)
     m_text->setLineWrapMode(QPlainTextEdit::NoWrap);
     QFont mono(QStringLiteral("Menlo"));
     mono.setStyleHint(QFont::Monospace);

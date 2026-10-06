@@ -6,6 +6,7 @@
 
 class QCheckBox;
 class QLineEdit;
+class QPushButton;
 
 // 公式Manager「OpenVPN / MS-SSTP 設定」(D_SM_OPENVPN) 相当。サーバー全体の設定。
 class OpenVpnSstpDialog : public QDialog
@@ -26,4 +27,5 @@ private:
     QCheckBox *m_openVpnCheck;
     QLineEdit *m_portsEdit;
     QCheckBox *m_sstpCheck;
+    QPushButton *m_configButton;
 };

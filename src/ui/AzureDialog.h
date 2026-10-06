@@ -19,12 +19,13 @@ public:
 private slots:
     void onChangeHostName();
     void onOpenWeb();
-    void onOk();
+    void onSetStatus();
 
 private:
     void reload();
 
     VpnServerRpc *m_rpc;
+    bool m_settingStatus = false;
     QRadioButton *m_enableRadio;
     QRadioButton *m_disableRadio;
     QLabel *m_statusLabel;

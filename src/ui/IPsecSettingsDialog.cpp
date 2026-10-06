@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
@@ -23,53 +24,67 @@ IPsecSettingsDialog::IPsecSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     // D_SM_IPSEC CAPTION
     setWindowTitle(tr("IPsec / L2TP / EtherIP / L2TPv3 設定"));
 
-    auto *introLabel = new QLabel(
-        tr("この VPN Server 上の仮想 HUB は、L2TP に対応した PC や Mac OS X、スマートフォン等からリモートアクセス VPN 接続を"
-           "受け付けたり、EtherIP / L2TPv3 に対応した市販のルータ等から拠点間 VPN 接続を受け付けたりできます。"),
-        this);
-    introLabel->setWordWrap(true);
+    auto note = [this](const QString &text) {
+        auto *label = new QLabel(text, this);
+        label->setWordWrap(true);
+        return label;
+    };
+
+    // S_TITLE / S_3
+    auto *titleLabel = new QLabel(tr("IPsec / L2TP / EtherIP / L2TPv3 サーバー機能の設定"), this);
+    QFont titleFont = titleLabel->font();
+    titleFont.setBold(true);
+    titleFont.setPointSize(titleFont.pointSize() + 4);
+    titleLabel->setFont(titleFont);
 
     // R_L2TP_OVER_IPSEC / R_L2TP_RAW / R_ETHERIP
-    m_l2tpIpsecCheck = new QCheckBox(tr("L2TP サーバー機能を有効にする (L2TP over IPsec)(&S)"), this);
-    m_l2tpRawCheck = new QCheckBox(tr("L2TP サーバー機能を有効にする (暗号化されていない L2TP)(&L)"), this);
-    m_etherIpCheck = new QCheckBox(tr("EtherIP / L2TPv3 over IPsec サーバー機能有効(&E)"), this);
+    m_l2tpIpsecCheck = new QCheckBox(tr("L2TP サーバー機能を有効にする (L2TP over IPsec)"), this);
+    m_l2tpRawCheck = new QCheckBox(tr("L2TP サーバー機能を有効にする (暗号化されていない L2TP)"), this);
+    m_etherIpCheck = new QCheckBox(tr("EtherIP / L2TPv3 over IPsec サーバー機能有効"), this);
     auto *detailButton = new QPushButton(tr("サーバー機能の詳細設定(&D)"), this);
     connect(detailButton, &QPushButton::clicked, this, &IPsecSettingsDialog::onDetail);
-
-    auto *l2tpGroup = new QGroupBox(tr("L2TP サーバー機能 (リモートアクセス VPN サーバー接続)"), this);
-    auto *l2tpLayout = new QVBoxLayout(l2tpGroup);
-    l2tpLayout->addWidget(m_l2tpIpsecCheck);
-    l2tpLayout->addWidget(m_l2tpRawCheck);
-
-    auto *etherIpGroup = new QGroupBox(tr("EtherIP / L2TPv3 サーバー機能 (拠点間接続 VPN サーバー機能)"), this);
-    auto *etherIpLayout = new QVBoxLayout(etherIpGroup);
-    etherIpLayout->addWidget(m_etherIpCheck);
-    etherIpLayout->addWidget(detailButton);
+    QFont boldFont = m_l2tpIpsecCheck->font();
+    boldFont.setBold(true);
+    m_l2tpIpsecCheck->setFont(boldFont);
+    m_l2tpRawCheck->setFont(boldFont);
+    m_etherIpCheck->setFont(boldFont);
 
     // S_1 / S_2
     m_defaultHubCombo = new QComboBox(this);
     m_defaultHubCombo->setEditable(true);
-    auto *hubLabel = new QLabel(
-        tr("L2TP、OpenVPN および MS-SSTP VPN 接続時のユーザー名は \"仮想HUB名\\ユーザー名\" または \"ユーザー名@仮想HUB名\" "
-           "のように指定してください。仮想 HUB 名の指定が省略された場合に接続する仮想 HUB を選択します。"),
-        this);
-    hubLabel->setWordWrap(true);
-    auto *hubForm = new QFormLayout;
-    hubForm->addRow(tr("接続時のユーザー名で仮想 HUB 名が省略された場合に接続する仮想 HUB の選択(&H):"), m_defaultHubCombo);
+    auto *hubRow = new QHBoxLayout;
+    hubRow->addWidget(new QLabel(tr("接続時のユーザー名で仮想 HUB 名が省略された場合に接続する仮想 HUB の選択(H):"), this));
+    hubRow->addWidget(m_defaultHubCombo, 1);
+
+    auto *l2tpGroup = new QGroupBox(tr("L2TP サーバー機能 (リモートアクセス VPN サーバー接続)"), this);
+    auto *l2tpLayout = new QVBoxLayout(l2tpGroup);
+    l2tpLayout->addWidget(note(tr("iPhone、iPad、Android 等のスマートフォンや Mac OS X、Windows 等の OS 付属の標準 VPN クライアントから VPN 接続ができるようになります。")));
+    l2tpLayout->addWidget(m_l2tpIpsecCheck);
+    l2tpLayout->addWidget(note(tr("iPhone、iPad、Android、Windows、Mac OS X からの VPN 接続を受け付けることができます。")));
+    l2tpLayout->addWidget(m_l2tpRawCheck);
+    l2tpLayout->addWidget(note(tr("IPsec を用いない L2TP を使用する特殊なクライアントをサポートできます。")));
+    l2tpLayout->addWidget(note(tr("L2TP、OpenVPN および MS-SSTP VPN 接続時のユーザー名は \"仮想HUB名\\ユーザー名\" または \"ユーザー名@仮想HUB名\" のように指定してください。なお、仮想 HUB 名の指定が省略された場合、デフォルトで接続する仮想 HUB を設定しておくことができます。")));
+    l2tpLayout->addLayout(hubRow);
+
+    detailButton->setEnabled(false);
+    connect(m_etherIpCheck, &QCheckBox::toggled, detailButton, &QPushButton::setEnabled);
+    auto *etherIpGroup = new QGroupBox(tr("EtherIP / L2TPv3 サーバー機能 (拠点間接続 VPN サーバー機能)"), this);
+    auto *etherIpLayout = new QVBoxLayout(etherIpGroup);
+    etherIpLayout->addWidget(note(tr("EtherIP / L2TPv3 over IPsec に対応した市販のルータ製品は、この VPN Server の仮想 HUB にレイヤ 2 (Ethernet) でブリッジ接続できます。")));
+    auto *etherIpRow = new QHBoxLayout;
+    etherIpRow->addWidget(m_etherIpCheck, 1);
+    etherIpRow->addWidget(detailButton);
+    etherIpLayout->addLayout(etherIpRow);
 
     // S07 / S_PSK / S_PSK2
     m_pskEdit = new QLineEdit(this);
-    auto *pskForm = new QFormLayout;
-    pskForm->addRow(tr("IPsec 事前共有鍵(&P):"), m_pskEdit);
-    auto *pskHint = new QLabel(
-        tr("IPsec 事前共有鍵は、「PSK (Pre-Shared Key)」または「シークレット」と呼ばれることがあります。"
-           "8 文字程度で設定し、VPN を利用するすべてのユーザーに配布してください。"),
-        this);
-    pskHint->setWordWrap(true);
-    auto *pskGroup = new QGroupBox(tr("IPsec 共通設定(&C)"), this);
+    auto *pskRow = new QHBoxLayout;
+    pskRow->addWidget(new QLabel(tr("IPsec 事前共有鍵(P):"), this));
+    pskRow->addWidget(m_pskEdit, 1);
+    auto *pskGroup = new QGroupBox(tr("IPsec 共通設定(C)"), this);
     auto *pskLayout = new QVBoxLayout(pskGroup);
-    pskLayout->addLayout(pskForm);
-    pskLayout->addWidget(pskHint);
+    pskLayout->addLayout(pskRow);
+    pskLayout->addWidget(note(tr("IPsec 事前共有鍵は、「PSK (Pre-Shared Key)」または「シークレット」と呼ばれることがあります。8 文字程度で設定し、VPN を利用するすべてのユーザーに配布してください。")));
 
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
@@ -78,15 +93,14 @@ IPsecSettingsDialog::IPsecSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     auto *layout = new QVBoxLayout(this);
-    layout->addWidget(introLabel);
+    layout->addWidget(titleLabel);
+    layout->addWidget(note(tr("この VPN Server 上の仮想 HUB は、L2TP に対応した PC や Mac OS X、スマートフォン等からリモートアクセス VPN 接続を受け付けたり、EtherIP / L2TPv3 に対応した市販のルータ等から拠点間 VPN 接続を受け付けたりできます。")));
     layout->addWidget(l2tpGroup);
     layout->addWidget(etherIpGroup);
-    layout->addWidget(hubLabel);
-    layout->addLayout(hubForm);
     layout->addWidget(pskGroup);
     layout->addWidget(buttonBox);
 
-    DialogSizing::fitToWidth(this, 560);
+    resize(760, 640);
 
     m_rpc->call(
         QStringLiteral("GetIPsecServices"), {},

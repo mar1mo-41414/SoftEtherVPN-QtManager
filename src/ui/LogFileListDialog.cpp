@@ -15,6 +15,25 @@
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
 
+namespace {
+
+// 公式Managerと同じ表記: 1024未満は "226 Bytes"、以上は "15.31 KBytes" / "1.20 MBytes"
+QString fileSize(double bytes)
+{
+    if (bytes < 1024.0) {
+        return QStringLiteral("%1 Bytes").arg(static_cast<qint64>(bytes));
+    }
+    if (bytes < 1024.0 * 1024.0) {
+        return QStringLiteral("%1 KBytes").arg(bytes / 1024.0, 0, 'f', 2);
+    }
+    if (bytes < 1024.0 * 1024.0 * 1024.0) {
+        return QStringLiteral("%1 MBytes").arg(bytes / (1024.0 * 1024.0), 0, 'f', 2);
+    }
+    return QStringLiteral("%1 GBytes").arg(bytes / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
+}
+
+} // namespace
+
 LogFileListDialog::LogFileListDialog(VpnServerRpc *rpc, QWidget *parent)
     : QDialog(parent)
     , m_rpc(rpc)
@@ -23,15 +42,17 @@ LogFileListDialog::LogFileListDialog(VpnServerRpc *rpc, QWidget *parent)
     setWindowTitle(tr("ログファイル一覧"));
 
     auto *titleLabel = new QLabel(
-        tr("サーバー上に保存されているログファイルを指定してダウンロードすることができます。\n"
-           "サーバー全体の管理者はすべての仮想 HUB のログとサーバーログを、仮想 HUB の管理者はその仮想 HUB の"
-           "ログファイルのみダウンロードできます。"),
+        tr("サーバー上に保存されているログファイルを指定してダウンロードすることができます。\n\n"
+           "VPN Server 全体の管理者は、すべての仮想 HUB のログおよびサーバー ログをダウンロードすることができます。"
+           "仮想 HUB の管理者は、その仮想 HUB のログファイルのみダウンロードできます。"),
         this);
     titleLabel->setWordWrap(true);
 
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(3);
-    m_table->setHorizontalHeaderLabels({tr("ファイルパス"), tr("サイズ"), tr("更新日時")});
+    m_table->setColumnCount(4);
+    // SM_LOG_FILE_COLUMN_1〜4
+    m_table->setHorizontalHeaderLabels({tr("ログファイル名"), tr("ファイルサイズ"), tr("更新日時"), tr("場所")});
+    m_table->verticalHeader()->hide();
     m_table->horizontalHeader()->setStretchLastSection(true);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -78,8 +99,9 @@ void LogFileListDialog::reload()
                 auto *pathItem = new QTableWidgetItem(file.value("FilePath_str").toString());
                 pathItem->setData(Qt::UserRole, file.value("FileSize_u32").toDouble());
                 m_table->setItem(row, 0, pathItem);
-                m_table->setItem(row, 1, new QTableWidgetItem(QString::number(file.value("FileSize_u32").toDouble(), 'f', 0)));
+                m_table->setItem(row, 1, new QTableWidgetItem(fileSize(file.value("FileSize_u32").toDouble())));
                 m_table->setItem(row, 2, new QTableWidgetItem(SoftEtherLabels::dateTime(file.value("UpdatedTime_dt").toString())));
+                m_table->setItem(row, 3, new QTableWidgetItem(file.value("ServerName_str").toString()));
             }
             m_table->resizeColumnsToContents();
             onSelectionChanged();

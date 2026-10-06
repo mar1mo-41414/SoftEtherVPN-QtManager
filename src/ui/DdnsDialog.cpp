@@ -6,6 +6,9 @@
 #include "util/DialogSizing.h"
 
 #include <QFormLayout>
+#include <QGridLayout>
+#include <QJsonArray>
+#include <QTimer>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -58,90 +61,153 @@ DdnsDialog::DdnsDialog(VpnServerRpc *rpc, QWidget *parent)
     // D_SM_DDNS CAPTION
     setWindowTitle(tr("ダイナミック DNS 機能"));
 
-    auto *introLabel = new QLabel(
-        tr("ダイナミック DNS により、この VPN Server コンピュータに永続的な固有の DNS ホスト名が割当てられます。"
-           "これにより独自でドメインを所有していなくても、VPN Client や VPN Bridge などの設定画面上で VPN Server の "
-           "IP アドレスの代わりに DNS ホスト名によって VPN Server を指定することができます。"),
-        this);
-    introLabel->setWordWrap(true);
+    auto note = [this](const QString &text, bool small = false) {
+        auto *label = new QLabel(text, this);
+        label->setWordWrap(true);
+        if (small) {
+            QFont font = label->font();
+            font.setPointSizeF(font.pointSizeF() - 1);
+            label->setFont(font);
+        }
+        return label;
+    };
 
-    // S_4 / S_STATUS3〜5
+    // S_TITLE / S_BOLD / S_1 / S_22 / S_3
+    auto *titleLabel = new QLabel(tr("ダイナミック DNS 機能"), this);
+    QFont titleFont = titleLabel->font();
+    titleFont.setBold(true);
+    titleFont.setPointSize(titleFont.pointSize() + 6);
+    titleLabel->setFont(titleFont);
+    auto *boldLabel = note(tr("このバージョンの VPN Server にはダイナミック DNS 機能が搭載されています。"));
+    QFont boldFont = boldLabel->font();
+    boldFont.setBold(true);
+    boldLabel->setFont(boldFont);
+
+    // S_4 / S_STATUS3〜5 / S_STATUS8
     m_fqdnLabel = new QLabel(this);
     m_ipv4Label = new QLabel(this);
     m_ipv6Label = new QLabel(this);
-    auto *hintButton = new QPushButton(tr("ヒント"), this);
-    connect(hintButton, &QPushButton::clicked, this, &DdnsDialog::onHint);
-
-    auto *statusForm = new QFormLayout;
-    statusForm->addRow(tr("割当てられているダイナミック DNS ホスト名(&H):"), m_fqdnLabel);
-    statusForm->addRow(tr("グローバル IPv&4 アドレス:"), m_ipv4Label);
-    statusForm->addRow(tr("グローバル IPv&6 アドレス:"), m_ipv6Label);
-    // S_STATUS8 / B_HINT2
     m_keyLabel = new QLabel(this);
     m_keyLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_fqdnLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_hintButton = new QPushButton(tr("ヒント"), this);
     auto *keyHintButton = new QPushButton(tr("ヒント"), this);
+    connect(m_hintButton, &QPushButton::clicked, this, &DdnsDialog::onHint);
     connect(keyHintButton, &QPushButton::clicked, this, &DdnsDialog::onKeyHint);
-    auto *keyLayout = new QHBoxLayout;
-    keyLayout->addWidget(m_keyLabel, 1);
-    keyLayout->addWidget(keyHintButton);
-    statusForm->addRow(tr("DNS 鍵:"), keyLayout);
-    auto *statusGroup = new QGroupBox(tr("現在の状態(&S)"), this);
-    auto *statusLayout = new QVBoxLayout(statusGroup);
-    statusLayout->addLayout(statusForm);
-    statusLayout->addWidget(hintButton, 0, Qt::AlignRight);
+
+    auto *statusGroup = new QGroupBox(tr("現在の状態(S):"), this);
+    auto *statusGrid = new QGridLayout(statusGroup);
+    auto *fqdnCaption = new QLabel(tr("割当てられているダイナミック DNS ホスト名(H):"), this);
+    QFont captionFont = fqdnCaption->font();
+    captionFont.setBold(true);
+    statusGrid->addWidget(fqdnCaption, 0, 0, 1, 2);
+    statusGrid->addWidget(m_fqdnLabel, 1, 0);
+    statusGrid->addWidget(m_hintButton, 1, 1);
+    auto *ipv4Caption = new QLabel(tr("グローバル IPv4 アドレス:"), this);
+    ipv4Caption->setFont(captionFont);
+    statusGrid->addWidget(ipv4Caption, 2, 0, 1, 2);
+    statusGrid->addWidget(m_ipv4Label, 3, 0, 1, 2);
+    auto *ipv6Caption = new QLabel(tr("グローバル IPv6 アドレス:"), this);
+    ipv6Caption->setFont(captionFont);
+    statusGrid->addWidget(ipv6Caption, 4, 0, 1, 2);
+    statusGrid->addWidget(m_ipv6Label, 5, 0, 1, 2);
+    auto *keyRow = new QHBoxLayout;
+    auto *keyCaption = new QLabel(tr("DNS 鍵:"), this);
+    keyCaption->setFont(captionFont);
+    keyRow->addWidget(keyCaption);
+    keyRow->addWidget(m_keyLabel, 1);
+    keyRow->addWidget(keyHintButton);
+    statusGrid->addLayout(keyRow, 6, 0, 1, 2);
+    statusGrid->setColumnStretch(0, 1);
 
     // S_5 / S_STATUS6 / S_STATUS7
     m_hostNameEdit = new QLineEdit(this);
     m_hostNameEdit->setValidator(new QRegularExpressionValidator(QRegularExpression(QStringLiteral("[A-Za-z0-9-]{0,31}")), this));
     m_suffixLabel = new QLabel(this);
+    m_changeCaption = new QLabel(tr("ダイナミック DNS ホスト名の変更(C):"), this);
+    m_changeCaption->setFont(captionFont);
     auto *hostLayout = new QHBoxLayout;
-    hostLayout->addWidget(m_hostNameEdit);
+    hostLayout->addWidget(m_hostNameEdit, 1);
     hostLayout->addWidget(m_suffixLabel);
-    auto *changeButton = new QPushButton(tr("上記の DNS ホスト名に変更する(&A)"), this);
-    auto *restoreButton = new QPushButton(tr("変更前に戻す(&R)"), this);
-    connect(changeButton, &QPushButton::clicked, this, &DdnsDialog::onChange);
-    connect(restoreButton, &QPushButton::clicked, this, &DdnsDialog::onRestore);
+    m_changeButton = new QPushButton(tr("上記の DNS ホスト名に変更する(&A)"), this);
+    m_restoreButton = new QPushButton(tr("変更前に戻す(&R)"), this);
+    connect(m_changeButton, &QPushButton::clicked, this, &DdnsDialog::onChange);
+    connect(m_restoreButton, &QPushButton::clicked, this, &DdnsDialog::onRestore);
     auto *changeButtons = new QHBoxLayout;
-    changeButtons->addStretch();
-    changeButtons->addWidget(restoreButton);
-    changeButtons->addWidget(changeButton);
+    changeButtons->addWidget(m_changeButton);
+    changeButtons->addWidget(m_restoreButton);
 
-    auto *hostHint = new QLabel(tr("3 文字以上 31 文字以内の半角英数字およびハイフン '-' が使用できます。変更は何度でも可能です。"), this);
-    hostHint->setWordWrap(true);
-    auto *changeGroup = new QGroupBox(tr("設定の変更(&M)"), this);
+    m_hostHint = note(tr("3 文字以上 31 文字以内の半角英数字およびハイフン '-' が使用できます。\n変更は何度でも可能です。"));
+    auto *changeGroup = new QGroupBox(tr("設定の変更(M):"), this);
     auto *changeLayout = new QVBoxLayout(changeGroup);
-    changeLayout->addWidget(new QLabel(tr("ダイナミック DNS ホスト名の変更:"), this));
+    changeLayout->addWidget(m_changeCaption);
     changeLayout->addLayout(hostLayout);
-    changeLayout->addWidget(hostHint);
+    changeLayout->addWidget(m_hostHint);
     changeLayout->addLayout(changeButtons);
+    changeLayout->addStretch();
 
-    // S_2
-    auto *noticeLabel = new QLabel(
-        tr("IPv6 インターネットに接続されていない場合は上記の [IPv6 アドレス] の欄にエラーが表示されますが、異常ではありません。"
-           "一部の国・地域では、行政機関による制限により、ダイナミック DNS サービスが利用できない場合があります。"),
-        this);
-    noticeLabel->setWordWrap(true);
+    auto *columns = new QHBoxLayout;
+    columns->addWidget(statusGroup, 1);
+    columns->addWidget(changeGroup, 1);
 
-    // B_PROXY / IDCANCEL
-    auto *proxyButton = new QPushButton(tr("プロキシサーバー経由で接続(&P)"), this);
+    // B_DISABLE / B_PROXY / IDCANCEL
+    auto *disableButton = new QPushButton(tr("ダイナミック DNS 機能を無効にする(&D)"), this);
+    m_proxyButton = new QPushButton(tr("プロキシサーバー経由で接続(&P)"), this);
+    m_proxyButton->hide(); // b_support_ddns_proxy が真のサーバーでのみ表示する (公式Managerと同じ)
     auto *closeButton = new QPushButton(tr("閉じる(&X)"), this);
-    connect(proxyButton, &QPushButton::clicked, this, &DdnsDialog::onProxy);
+    connect(disableButton, &QPushButton::clicked, this, &DdnsDialog::onDisableHint);
+    connect(m_proxyButton, &QPushButton::clicked, this, &DdnsDialog::onProxy);
     connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
     auto *bottomLayout = new QHBoxLayout;
-    bottomLayout->addWidget(proxyButton);
+    bottomLayout->addWidget(disableButton);
     bottomLayout->addStretch();
+    bottomLayout->addWidget(m_proxyButton);
     bottomLayout->addWidget(closeButton);
 
     auto *layout = new QVBoxLayout(this);
-    layout->addWidget(introLabel);
-    layout->addWidget(statusGroup);
-    layout->addWidget(changeGroup);
-    layout->addWidget(noticeLabel);
+    layout->addWidget(titleLabel);
+    layout->addWidget(boldLabel);
+    layout->addWidget(note(tr("ダイナミック DNS により、この VPN Server コンピュータに永続的な固有の DNS ホスト名が割当てられます。これにより独自でドメインを所有していなくても、VPN Client や VPN Bridge などの設定画面上で VPN Server の IP アドレスの代わりに DNS ホスト名によって VPN Server を指定することができます。")));
+    layout->addWidget(note(tr("また、IP アドレスが変化する可能性がある一般的な ISP を用いて VPN Server をインターネットに接続する場合でも、IP アドレスが変化すれば自動的に DNS ホストに対応する IP アドレスが更新されますので、可変 IP アドレスでも VPN Server を運用することができるようになります。\nこれにより、高価な月額料金が必要な固定グローバル IP アドレスのサービスを契約する必要がなくなります。"), true));
+    layout->addWidget(note(tr("さらに、このバージョンの VPN Server は NAT トラバーサル機能をサポートしており、VPN Server が NAT の内側にありプライベート IP アドレスしか持っていない場合でも、NAT 上で特別な設定をすることなく、インターネット側からの VPN 接続を受付けることができます。")));
+    layout->addLayout(columns);
+    layout->addWidget(note(tr("IPv6 インターネットに接続されていない場合は上記の [IPv6 アドレス] の欄にエラーが表示されますが、異常ではありません。一部の国・地域では、行政機関による制限により、ダイナミック DNS サービスが利用できない場合があります。")));
     layout->addLayout(bottomLayout);
 
-    DialogSizing::fitToWidth(this, 560);
+    resize(760, 700);
     reload();
     loadKey();
+    loadCaps();
+
+    // 公式Managerと同様に、状態は定期的に更新する (ホスト名入力欄は上書きしない)。
+    auto *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, [this]() { reload(/*silent=*/true); });
+    timer->start(2000);
+}
+
+void DdnsDialog::loadCaps()
+{
+    m_rpc->call(
+        QStringLiteral("GetCaps"), {},
+        [this](const QJsonObject &result) {
+            for (const QJsonValue &value : result.value("CapsList").toArray()) {
+                const QJsonObject cap = value.toObject();
+                if (cap.value("CapsName_str").toString() == QLatin1String("b_support_ddns_proxy")) {
+                    m_proxyButton->setVisible(cap.value("CapsValue_u32").toInt() != 0);
+                }
+            }
+        },
+        [](const RpcError &) {});
+}
+
+void DdnsDialog::onDisableHint()
+{
+    // SM_DISABLE_DDNS_HINT: 無効化のAPIは無く、設定ファイルの編集が必要
+    QMessageBox::information(
+        this, tr("ダイナミック DNS 機能を無効にする"),
+        tr("ダイナミック DNS 機能を無効にするには、VPN Server の設定ファイルを編集します。\n\n"
+           "\"declare root\" ディレクティブ内に \"declare DDnsClient\" ディレクティブがあります。この中にある \"bool Disable\" の値を "
+           "true に設定して VPN Server を再起動することにより、ダイナミック DNS 機能が無効になります。"));
 }
 
 void DdnsDialog::loadKey()
@@ -157,7 +223,7 @@ void DdnsDialog::loadKey()
         [this](const RpcError &) { m_keyLabel->setText(tr("DNS 鍵の取得に失敗しました。")); });
 }
 
-void DdnsDialog::reload()
+void DdnsDialog::reload(bool silent)
 {
     m_rpc->call(
         QStringLiteral("GetDDnsClientStatus"), {},
@@ -177,10 +243,23 @@ void DdnsDialog::reload()
                                                                           : m_ipv4);
             m_ipv6Label->setText(status.value("Err_IPv6_u32").toInt() != 0 ? tr("IPv6 の DDNS サーバーに到達できません。")
                                                                           : m_ipv6);
-            m_hostNameEdit->setText(m_currentHostName);
-            m_suffixLabel->setText(m_suffix);
+            if (!m_hostnameSet && !m_currentHostName.isEmpty()) {
+                m_hostnameSet = true;
+                m_hostNameEdit->setText(m_currentHostName);
+            }
+            const bool reachable = status.value("Err_IPv4_u32").toInt() == 0 || status.value("Err_IPv6_u32").toInt() == 0;
+            m_suffixLabel->setText(reachable ? m_suffix : QString());
+            for (QWidget *w : QList<QWidget *>{m_changeCaption, m_hostNameEdit, m_suffixLabel, m_hostHint, m_hintButton}) {
+                w->setEnabled(reachable);
+            }
+            m_changeButton->setEnabled(reachable);
+            m_restoreButton->setEnabled(reachable);
         },
-        [this](const RpcError &error) { RpcUi::showError(this, tr("ダイナミック DNS 状態の取得"), error); });
+        [this, silent](const RpcError &error) {
+            if (!silent) {
+                RpcUi::showError(this, tr("ダイナミック DNS 状態の取得"), error);
+            }
+        });
 }
 
 void DdnsDialog::onRestore()
