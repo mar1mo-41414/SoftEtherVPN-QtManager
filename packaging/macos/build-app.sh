@@ -4,6 +4,8 @@
 #
 # 使い方:
 #   packaging/macos/build-app.sh
+#   # HomebrewでQtを入れていない環境 (例: aqtinstallで導入した場合) は明示指定:
+#   CMAKE_PREFIX_PATH=~/Qt/6.7.3/macos packaging/macos/build-app.sh
 #
 # 成果物: dist/macos/SoftEtherVPN-QtManager.app, dist/macos/SoftEtherVPN-QtManager-macos.zip
 set -euo pipefail
@@ -13,7 +15,12 @@ BUILD_DIR="$ROOT/build-release"
 DIST_DIR="$ROOT/dist/macos"
 APP_NAME="SoftEtherVPN-QtManager"
 
-cmake -S "$ROOT" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
+CMAKE_PREFIX_PATH_ARGS=()
+if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
+    CMAKE_PREFIX_PATH_ARGS=(-DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH")
+fi
+
+cmake -S "$ROOT" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release "${CMAKE_PREFIX_PATH_ARGS[@]}"
 cmake --build "$BUILD_DIR" --config Release -j
 
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"

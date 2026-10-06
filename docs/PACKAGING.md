@@ -20,6 +20,29 @@ packaging/macos/build-app.sh
   システム設定の「セキュリティとプライバシー」から許可する必要がある)。
   署名が必要になったら`macdeployqt -codesign=<identity>`相当の対応を追加する。
 
+### Intel Mac (`p_mac`) でのビルド
+
+Intel Mac版は `p_mac` (proxMac、常時稼働) で手動ビルドする運用。この機は macOS 12.7.6
+(Monterey) で、**Homebrewが既にIntel Macのサポートを終了しておりインストールできない**
+(2026-10-06時点)。代わりに以下の手順でビルドする:
+
+```bash
+# 1. Homebrewの代わりにpipでQt/CMakeを導入 (sudo不要)
+pip3 install --user aqtinstall cmake
+export PATH="$HOME/Library/Python/3.9/bin:$PATH"   # Pythonバージョンは環境に合わせる
+
+# 2. Qt本体を導入。6.11系はホストツール(lrelease等)がmacOS 13以降必須でこの機では動かず、
+#    6.5.3はmoc(Meta-Object Compiler)がXcodeのSDK(libc++の<concepts>ヘッダー)を
+#    パースできずビルド自体が失敗する。6.7.3は両方の問題を回避できることを確認済み。
+aqt install-qt mac desktop 6.7.3 clang_64 -O ~/Qt -m qt5compat
+
+# 3. ビルド (CMAKE_PREFIX_PATHでaqt版Qtを明示)
+CMAKE_PREFIX_PATH=~/Qt/6.7.3/macos packaging/macos/build-app.sh
+```
+
+実機(p_mac, x86_64)でビルド・起動確認済み(2026-10-06)。将来Qtをバージョンアップする際は
+上記2点(ホストツールのmacOSバージョン要件、mocのconcepts構文パース可否)を再度確認すること。
+
 ## Linux: `.deb`
 
 CMakeのCPack (DEBジェネレータ) を使う。`CMakeLists.txt`に`UNIX AND NOT APPLE`限定で

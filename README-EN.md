@@ -28,9 +28,7 @@ the Windows VPN Server Manager:
 
 ## Download
 
-Prebuilt binaries are published on [Releases](../../releases)
-(Linux x86_64 and arm64 are built automatically via CI. macOS builds — both
-Apple Silicon and Intel — are currently done manually, so they may lag behind).
+Prebuilt binaries are available from [Releases](../../releases)!
 
 ## Build
 

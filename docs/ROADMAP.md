@@ -83,6 +83,8 @@
         タグpush時にLinux x64・arm64のビルド成果物をGitHub Release化。macOS (arm64/Intelとも)は
         `macos-14`ランナーでのビルドが最終リンク直前で毎回ハングする現象を確認したため、
         いったん手動ビルド対応の方針 (詳細は[docs/PACKAGING.md](PACKAGING.md))
+  - [x] v0.1.0リリース。Linux x64・arm64 (AppImage, CI) / macOS arm64・x86_64 (zip, 手動)の
+        4種類をReleaseに添付。Intel Mac版は`p_mac`(常時稼働)で継続ビルドする運用を確立
   - [x] レイアウト再現(進行中): 接続一覧/接続編集(+プロキシ)/サーバー管理画面(D_SM_SERVER)/
         仮想HUB管理画面(D_SM_HUB)/ユーザー(6認証方式・有効期限・ポリシー)/グループ/
         セキュリティポリシー/アクセスリスト(IPv4/IPv6・MAC・TCP状態・リダイレクト・遅延/ロス、

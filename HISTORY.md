@@ -226,3 +226,21 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
   手動ビルド運用とし、`.github/workflows/release.yml`からはmacOSジョブを一旦削除。
   Linux x64/arm64のAppImageビルドはCIのまま自動化を維持(両方とも数分で正常完走する
   ことを確認済み)。原因の見当がつけば再度自動化を検討する。
+
+## 2026-10-06 v0.1.0公開、Intel Macビルド環境を`p_mac`に確立
+
+- v0.1.0としてGitHub Releaseを作成。Linux x86_64/arm64はCI自動ビルド、
+  macOS arm64(Apple Silicon)・macOS x86_64(Intel)はいずれも手動ビルドで添付。
+- Intel Mac版のビルド環境を`p_mac`(proxMac、24/365稼働)に確立。今後のIntelビルドは
+  継続してこの機を使う。
+  - Homebrewが2026-10-06時点で既にIntel Macのサポートを終了しておりインストール不可
+    ("Homebrew on macOS is only supported on Apple Silicon processors!")と判明。
+    代わりに`pip3 install --user aqtinstall cmake`でQt/CMakeを導入(sudo不要)。
+  - Qt 6.11.1はホストツール(lrelease等)がmacOS 13以降必須でp_mac(macOS 12.7.6)では
+    動作せず。Qt 6.5.3はホストツールは動くがmoc(Meta-Object Compiler)がXcodeの
+    SDK(MacOSX13.1.sdk)のlibc++ `<concepts>`ヘッダーをパースできずビルド自体が失敗
+    ("Parse error at ::"、`__cplusplus`の値を揃えても解消せず)。Qt 6.7.3で両方の
+    問題が解消することを確認し、これをp_macでの標準バージョンとした。
+  - `packaging/macos/build-app.sh`に`CMAKE_PREFIX_PATH`環境変数での上書きに対応させ、
+    Homebrew以外の場所に入れたQtも指定できるようにした。
+  - 実機(p_mac, x86_64)でビルド・起動確認済み、Releaseにx86_64版zipを追加。
