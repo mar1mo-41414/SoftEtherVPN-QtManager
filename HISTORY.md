@@ -115,3 +115,18 @@ Win11 VM (RDP) で公式の「SoftEther VPN サーバー管理マネージャ」
   コールバックで `QPointer` ガードする形に修正。**他のダイアログにも同じ潜在リスク**
   (非同期ラムダで `this` を捕捉するだけ) があるため、`VpnServerRpc::call` に
   コンテキストオブジェクトを渡して寿命管理する形への一括リファクタを検討すること。
+
+## 2026-10-06 EtherIP 実機テストとキー照合
+
+- raspi5-2 で EtherIP 定義のダミーID追加 (`AddEtherIpId`) → 一覧反映 → 編集ダイアログ表示
+  (`GetEtherIpId`) → 削除 (`DeleteEtherIpId`) を実機で確認。いずれも成功。
+- **キー照合:** アプリが使う JSON-RPC キー364個を本体ソース (Pack の Add/Get 呼び出し) と突き合わせた。
+  不一致は4件のみ: `NumConnectionsEatablished` (ドキュメントの誤記、修正済み) /
+  `NoTls1` (RPCのPackにキーが無い=サーバーは無視する。カスケード編集の「SSL 3.0 を使用する」は
+  APIでは効かない) / `NumPort` (配列の件数で実質無関係) / `OpenVPNPortList` (master の
+  `OpenVpnSstpConfig` には EnableOpenVPN / EnableSSTP のみ。ポート一覧は4.x系サーバーのみの項目の
+  ため、GetOpenVpnSstpConfig の結果に含まれる場合だけ欄を表示するようにした)。
+  ポリシーのキー (`policy:CheckMac` 等) は本体の `PACK_GET_POLICY_*` と一致を確認
+  (ドキュメントの `SecPol_*` は誤記)。
+- ダイアログ内のテーブル行へのバックグラウンドクリックは拒否されるため、行選択が必要な
+  操作確認は `computer_batch` (フルスクリーン操作) で行う。

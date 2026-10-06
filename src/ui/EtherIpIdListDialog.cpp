@@ -121,7 +121,13 @@ void EtherIpIdListDialog::onAdd()
         return;
     }
     m_rpc->call(
-        QStringLiteral("AddEtherIpId"), dialog.toRpcParams(), RpcUi::guarded(this, [this](const QJsonObject &) { reload(); }),
+        QStringLiteral("AddEtherIpId"), dialog.toRpcParams(),
+        RpcUi::guarded(this, [this](const QJsonObject &) {
+            reload();
+            // SM_ETHERIP_ADD_OK
+            QMessageBox::information(this, tr("EtherIP / L2TPv3 サーバー機能の詳細設定"),
+                                      tr("新しい EtherIP / L2TPv3 クライアントの接続設定を追加しました。"));
+        }),
         RpcUi::guarded(this, [this](const RpcError &error) { RpcUi::showError(this, tr("EtherIP / L2TPv3 定義の追加"), error); }));
 }
 

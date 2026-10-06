@@ -66,9 +66,12 @@ OpenVpnSstpDialog::OpenVpnSstpDialog(VpnServerRpc *rpc, QWidget *parent)
     auto *openVpnLayout = new QVBoxLayout(openVpnGroup);
     openVpnLayout->addWidget(note(tr("OpenVPN 社の OpenVPN ソフトウェア製品と同等の VPN サーバー機能を搭載しています。\n\nOpenVPN クライアントからこの VPN Server に接続できます。")));
     openVpnLayout->addWidget(m_openVpnCheck);
+    auto *portNote = note(tr("UDP ポートは複数指定できます。複数指定する場合はスペースまたはカンマで区切ってください。OpenVPN サーバー機能は TCP ポートでも有効になります。この場合、この VPN Server に現在作成されているすべての TCP リスナポートで OpenVPN プロトコルがサポートされます。"));
     openVpnLayout->addWidget(portCaption);
     openVpnLayout->addLayout(portRow);
-    openVpnLayout->addWidget(note(tr("UDP ポートは複数指定できます。複数指定する場合はスペースまたはカンマで区切ってください。OpenVPN サーバー機能は TCP ポートでも有効になります。この場合、この VPN Server に現在作成されているすべての TCP リスナポートで OpenVPN プロトコルがサポートされます。")));
+    openVpnLayout->addWidget(portNote);
+    // OpenVPN の UDP ポート一覧は 4.x 系のサーバーのみが持つ項目。無い場合は欄ごと隠す (GetOpenVpnSstpConfig の結果で判定)。
+    m_portWidgets = {portCaption, m_portsEdit, resetButton, portNote};
     openVpnLayout->addWidget(toolCaption);
     openVpnLayout->addWidget(toolLabel);
     openVpnLayout->addWidget(m_configButton);
@@ -115,6 +118,10 @@ OpenVpnSstpDialog::OpenVpnSstpDialog(VpnServerRpc *rpc, QWidget *parent)
         QStringLiteral("GetOpenVpnSstpConfig"), {},
         RpcUi::guarded(this, [this](const QJsonObject &result) {
             m_openVpnCheck->setChecked(result.value("EnableOpenVPN_bool").toBool());
+            m_hasPortList = result.contains("OpenVPNPortList_str");
+            for (QWidget *w : m_portWidgets) {
+                w->setVisible(m_hasPortList);
+            }
             m_portsEdit->setText(result.value("OpenVPNPortList_str").toString());
             m_sstpCheck->setChecked(result.value("EnableSSTP_bool").toBool());
         }),
@@ -161,7 +168,9 @@ void OpenVpnSstpDialog::onOk()
 {
     QJsonObject params;
     params["EnableOpenVPN_bool"] = m_openVpnCheck->isChecked();
-    params["OpenVPNPortList_str"] = m_portsEdit->text().trimmed();
+    if (m_hasPortList) {
+        params["OpenVPNPortList_str"] = m_portsEdit->text().trimmed();
+    }
     params["EnableSSTP_bool"] = m_sstpCheck->isChecked();
     m_rpc->call(
         QStringLiteral("SetOpenVpnSstpConfig"), params, RpcUi::guarded(this, [this](const QJsonObject &) { accept(); }),

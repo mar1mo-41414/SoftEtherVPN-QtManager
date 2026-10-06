@@ -3,6 +3,7 @@
 #include "rpc/VpnServerRpc.h"
 
 #include <QDialog>
+#include <QList>
 
 class QCheckBox;
 class QLineEdit;
@@ -28,4 +29,6 @@ private:
     QLineEdit *m_portsEdit;
     QCheckBox *m_sstpCheck;
     QPushButton *m_configButton;
+    QList<QWidget *> m_portWidgets;
+    bool m_hasPortList = true;
 };
