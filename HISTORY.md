@@ -152,3 +152,20 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
   落とし穴一覧) を追加。README/README-ENを簡潔な内容に書き直し、技術的な話は
   ARCHITECTURE.mdへ切り出した。環境固有の情報 (ホスト名・IPアドレス等) がコード/ドキュメント
   中に残っていないか確認済み。
+
+## 2026-10-06 ローカライズ基盤の構築 (日本語→英語)
+
+- Qt Linguist (lupdate/lrelease) を導入。`i18n/SoftEtherVPN-QtManager_en.ts` が英語訳、
+  `CMakeLists.txt` の `qt_add_translations()` で `.qm` にコンパイルしリソース埋め込み、
+  `src/main.cpp` でOSロケールに応じて自動読み込み (`SEQTM_LANG` 環境変数で強制指定も可能、
+  テスト用)。
+- UI文言は `docs/upstream-reference/strtable_ja.stb` の文言をそのまま使っている箇所が
+  多いため、`tools/gen_translations.py` で `strtable_ja.stb`/`strtable_en.stb` の対応する
+  日本語文字列から公式の英訳を自動的に流し込んだ (PREFIXブロック単位でキー対応、
+  Windowsニーモニック表記 "(&X)" の有無のゆらぎ、Qtの `%1`/`%2` ↔ stbの `%S` の
+  プレースホルダ変換も吸収)。1634件中1296件 (約79%) を自動翻訳、残りはアプリ独自の
+  文言や複数行の説明文など (このスクリプトの `EXTRA_TRANSLATIONS` に主要なものを手動補完)。
+  未訳の文字列は実行時に日本語のまま表示される (Qtの通常のフォールバック)。
+  実機で英語ロケール表示を確認済み (接続一覧・サーバー管理画面はほぼ全訳)。
+- 残りの未訳文字列は `i18n/SoftEtherVPN-QtManager_en.ts` をQt Linguistで直接編集するか、
+  `tools/gen_translations.py` に追記して埋めていく想定 (継続作業)。

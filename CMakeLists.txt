@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network LinguistTools)
 
 qt_standard_project_setup()
 
@@ -154,3 +154,15 @@ set_target_properties(SoftEtherVPN-QtManager PROPERTIES
     MACOSX_BUNDLE ON
     WIN32_EXECUTABLE ON
 )
+
+# ローカライズ: i18n/*.ts (Qt Linguist) を .qm にコンパイルし、リソースとして埋め込む。
+# 翻訳元 (tr() の第一引数) は日本語。英語版を含む各 .ts の訳文は
+# docs/upstream-reference/strtable_ja/en.stb を突き合わせて機械的に流し込んだもの + 手動補完。
+# 未訳の文字列は実行時に日本語のまま表示される (Qtの通常のフォールバック動作)。
+# `cmake --build build --target update_translations` で .ts を再抽出できる。
+qt_add_translations(SoftEtherVPN-QtManager
+    TS_FILES i18n/SoftEtherVPN-QtManager_en.ts
+    RESOURCE_PREFIX "/i18n"
+    LUPDATE_SOURCE_TARGETS SoftEtherVPN-QtManager
+)
+
