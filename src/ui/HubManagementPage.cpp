@@ -2,7 +2,11 @@
 #include "AccessListDialog.h"
 #include "CascadeLinkListDialog.h"
 #include "GroupListDialog.h"
+#include "HubCaDialog.h"
+#include "HubCrlDialog.h"
 #include "HubEditDialog.h"
+#include "HubLogSettingsDialog.h"
+#include "HubRadiusDialog.h"
 #include "InfoTableDialog.h"
 #include "LogFileListDialog.h"
 #include "SecureNatDialog.h"
@@ -50,14 +54,6 @@ QFrame *separator(QWidget *parent)
     return line;
 }
 
-QPushButton *placeholderButton(const QString &text, QWidget *parent)
-{
-    auto *button = new QPushButton(text, parent);
-    button->setEnabled(false);
-    button->setToolTip(HubManagementPage::tr("未実装"));
-    return button;
-}
-
 } // namespace
 
 HubManagementPage::HubManagementPage(QWidget *parent)
@@ -88,7 +84,8 @@ HubManagementPage::HubManagementPage(QWidget *parent)
 
     // 左列 2: 仮想 HUB 設定(N)
     auto *propertyButton = new QPushButton(tr("仮想 HUB のプロパティ(&P)"), this);
-    auto *radiusButton = placeholderButton(tr("認証サーバーの設定(&E)"), this);
+    auto *radiusButton = new QPushButton(tr("認証サーバーの設定(&E)"), this);
+    connect(radiusButton, &QPushButton::clicked, this, &HubManagementPage::onRadius);
     auto *linkButton = new QPushButton(tr("カスケード接続の管理(&C)"), this);
     connect(propertyButton, &QPushButton::clicked, this, &HubManagementPage::onEditProperty);
     connect(linkButton, &QPushButton::clicked, this, &HubManagementPage::onManageCascadeLinks);
@@ -120,10 +117,13 @@ HubManagementPage::HubManagementPage(QWidget *parent)
     statusLayout->addLayout(statusButtons);
 
     // 右列 2: その他の管理(O)
-    auto *logButton = placeholderButton(tr("ログ保存設定(&L)"), this);
+    auto *logButton = new QPushButton(tr("ログ保存設定(&L)"), this);
+    connect(logButton, &QPushButton::clicked, this, &HubManagementPage::onLogSettings);
     auto *logFileButton = new QPushButton(tr("ログファイル一覧(&Q)"), this);
-    auto *caButton = placeholderButton(tr("信頼する証明機関の証明書(&T)"), this);
-    auto *crlButton = placeholderButton(tr("無効な証明書(&K)"), this);
+    auto *caButton = new QPushButton(tr("信頼する証明機関の証明書(&T)"), this);
+    connect(caButton, &QPushButton::clicked, this, &HubManagementPage::onTrustedCa);
+    auto *crlButton = new QPushButton(tr("無効な証明書(&K)"), this);
+    connect(crlButton, &QPushButton::clicked, this, &HubManagementPage::onCrl);
     auto *snatButton = new QPushButton(tr("仮想 NAT および仮想 DHCP サーバー機能(&V)"), this);
     connect(logFileButton, &QPushButton::clicked, this, &HubManagementPage::onManageLogFiles);
     connect(snatButton, &QPushButton::clicked, this, &HubManagementPage::onManageSecureNAT);
@@ -249,4 +249,28 @@ void HubManagementPage::onEditProperty()
             QMessageBox::warning(this, tr("エラー"),
                                   tr("仮想 HUB の設定取得に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
+}
+
+void HubManagementPage::onRadius()
+{
+    HubRadiusDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
+}
+
+void HubManagementPage::onLogSettings()
+{
+    HubLogSettingsDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
+}
+
+void HubManagementPage::onTrustedCa()
+{
+    HubCaDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
+}
+
+void HubManagementPage::onCrl()
+{
+    HubCrlDialog dialog(m_rpc, m_hubName, this);
+    dialog.exec();
 }
