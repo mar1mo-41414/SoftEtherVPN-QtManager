@@ -1,11 +1,15 @@
 name: Release
 
 # vX.Y.Z タグをpushすると、以下のビルド成果物を添えてGitHub Releaseを作成する:
-#   - macOS (Apple Silicon / arm64) の .app を固めたzip
 #   - Linux x86_64 / arm64 のAppImage
 #
-# macOS Intel (x86_64) 版はGitHub Actionsのホスト型ランナーがIntel Macの提供を終了して
-# いるため含めない(手動ビルドで別途用意する)。
+# macOS (arm64 / x86_64 とも) はいったん手動ビルド運用。
+# macos-14ランナーで`cmake --build`の最終リンク直前(全ソースのコンパイルが終わった直後)で
+# 毎回ハングする現象を2回連続で確認した(ローカルのApple Siliconビルドでは同じコードが
+# 1〜2分で完走する)。GitHub Actions側もmacOS arm64ランナーの容量不足を案内しており、
+# 原因がこちらのビルド手順かCI環境固有の問題か切り分けできていないため、
+# 無理に自動化を追わず手動ビルド(`packaging/macos/build-app.sh`)でReleaseに添付する方針とした。
+# 詳細はdocs/PACKAGING.md参照。原因が分かれば自動化に戻す。
 
 on:
   push:
@@ -17,31 +21,6 @@ permissions:
   contents: write
 
 jobs:
-  macos-arm64:
-    runs-on: macos-14
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Qt
-        run: brew install qt cmake
-      - name: Configure
-        timeout-minutes: 5
-        run: cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
-      - name: Build
-        timeout-minutes: 15
-        run: cmake --build build-release --config Release -j
-      - name: Deploy Qt frameworks (macdeployqt) + zip
-        timeout-minutes: 10
-        run: |
-          mkdir -p dist/macos
-          cp -R build-release/SoftEtherVPN-QtManager.app dist/macos/
-          macdeployqt dist/macos/SoftEtherVPN-QtManager.app -verbose=2
-          (cd dist/macos && ditto -c -k --sequesterRsrc --keepParent SoftEtherVPN-QtManager.app SoftEtherVPN-QtManager-macos.zip)
-      - uses: actions/upload-artifact@v4
-        with:
-          name: macos-arm64
-          path: dist/macos/SoftEtherVPN-QtManager-macos.zip
-
   linux:
     strategy:
       matrix:
@@ -67,7 +46,7 @@ jobs:
           path: dist/linux/*.AppImage
 
   release:
-    needs: [macos-arm64, linux]
+    needs: [linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

@@ -29,8 +29,8 @@ the Windows VPN Server Manager:
 ## Download
 
 Prebuilt binaries are published on [Releases](../../releases)
-(macOS Apple Silicon / Linux x86_64 and arm64. The macOS Intel build is done
-manually, so it may lag behind).
+(Linux x86_64 and arm64 are built automatically via CI. macOS builds — both
+Apple Silicon and Intel — are currently done manually, so they may lag behind).
 
 ## Build
 

@@ -64,12 +64,16 @@ linuxdeploy-plugin-qt を自動ダウンロードして使い、`dist/linux/Soft
 `.github/workflows/release.yml` が `vX.Y.Z` 形式のタグをpushすると自動的に以下を
 ビルドしてGitHub Releaseに添付する:
 
-- macOS (Apple Silicon / arm64) `.app` の zip (`macos-14`ランナー)
 - Linux x86_64 / arm64 の AppImage (`ubuntu-24.04` / `ubuntu-24.04-arm`)
 
-macOS Intel (x86_64) 版はGitHub Actionsのホスト型ランナーがIntel Mac提供を終了して
-いるため含めていない。必要な場合はIntel Mac実機で`packaging/macos/build-app.sh`を
-実行し、Releaseページに手動でアップロードする。
+**macOS (arm64 / x86_64 とも) は現状CIに含めず、手動ビルドで対応している。**
+`macos-14`ランナーで`cmake --build`を回すと、全ソースのコンパイルが終わった直後
+(最終リンクの直前)で毎回ハングする現象を2026-10-06に2回連続で確認した
+(ローカルのApple Silicon実機では同じコードが1〜2分で完走しており、再現しない)。
+GitHub Actions側も当時「macOS arm64ランナーは容量不足でキューイングが長引く場合がある」
+と案内しており、こちらのビルド手順の問題かCI環境固有の問題か切り分けできていない。
+無理に自動化を追わず、`packaging/macos/build-app.sh`で実機ビルドしたものを
+Releaseページに手動でアップロードする運用とした。原因の見当がついたら自動化に戻す。
 
 ## バージョン番号
 

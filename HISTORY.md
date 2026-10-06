@@ -205,3 +205,24 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
   が解消した。
 - marnux (Linux Mint 22, x86_64) で生成したAppImageを実機起動確認のうえMacの
   `~/Downloads/`に配置。
+
+## 2026-10-06 GitHub Actions: macOS arm64ビルドのハングを確認、手動ビルド運用に変更
+
+- `.github/workflows/release.yml`のmacOS arm64ジョブ(`macos-14`ランナー)で、
+  `cmake --build`が全ソースファイルのコンパイルを終えた直後(最終リンク開始前、
+  具体的には`qrc_SoftEtherVPN-QtManager_translations.cpp.o`のコンパイル完了直後)で
+  完全に応答しなくなる現象を2回連続で確認(1回目: 単一ステップ構成で約28分放置後に
+  手動キャンセル、2回目: 原因切り分けのためConfigure/Build/Deployにステップ分割し
+  timeout-minutes追加のうえ再実行したが、同じ箇所で7分経過時点でも無進捗だったため
+  同様にキャンセル)。
+- ローカル(Apple Silicon実機のHomebrew Qt 6.11.1)では同一コードが1〜2分で問題なく
+  完走しビルド成果物も正常動作するため、再現しない。Qt・CMakeいずれのインストール済み
+  ファイルにもcodesignを明示的に呼ぶ記述は無く(Apple Siliconではリンカ自体が自動で
+  ad-hoc署名するため別プロセス呼び出しは発生しない)、ローカルで問題なく動く以上
+  codesign起因と断定はできず。GitHub Actions側も当時「macOS arm64ランナーは容量不足で
+  キューイングが長引く場合がある」という注記を出しており、原因はビルド手順側か
+  CI環境(ランナーの状態・ネットワーク等)側か切り分けできていない。
+- 無理に自動化を追わず、macOS (arm64・Intelとも) は`packaging/macos/build-app.sh`による
+  手動ビルド運用とし、`.github/workflows/release.yml`からはmacOSジョブを一旦削除。
+  Linux x64/arm64のAppImageビルドはCIのまま自動化を維持(両方とも数分で正常完走する
+  ことを確認済み)。原因の見当がつけば再度自動化を検討する。

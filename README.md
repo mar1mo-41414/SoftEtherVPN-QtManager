@@ -29,8 +29,8 @@ SoftEther VPN Server（Linux/Mac/Windows問わず、JSON-RPC APIが有効なも�
 ## ダウンロード
 
 ビルド済みバイナリを [Releases](../../releases) で配布しています
-(macOS Apple Silicon / Linux x86_64・arm64。macOS Intel版は手動ビルドのため
-提供にタイムラグがあります)。
+(Linux x86_64・arm64はCIで自動ビルド。macOS版(Apple Silicon・Intelとも)は
+現状手動ビルドのため提供にタイムラグがあります)。
 
 ## ビルド方法
 
