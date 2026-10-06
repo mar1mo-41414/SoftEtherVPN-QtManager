@@ -141,6 +141,7 @@ qt_add_executable(SoftEtherVPN-QtManager
     src/ui/ProxySettingsDialog.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
+    packaging/icon/SoftEtherVPN-QtManager.icns
 )
 
 target_include_directories(SoftEtherVPN-QtManager PRIVATE src)
@@ -150,8 +151,14 @@ target_link_libraries(SoftEtherVPN-QtManager PRIVATE
     Qt6::Network
 )
 
+set_source_files_properties(packaging/icon/SoftEtherVPN-QtManager.icns PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
+
 set_target_properties(SoftEtherVPN-QtManager PROPERTIES
     MACOSX_BUNDLE ON
+    MACOSX_BUNDLE_ICON_FILE "SoftEtherVPN-QtManager.icns"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.mar1mo-41414.softethervpn-qtmanager"
     WIN32_EXECUTABLE ON
 )
 
@@ -172,6 +179,10 @@ if(UNIX AND NOT APPLE)
     install(TARGETS SoftEtherVPN-QtManager RUNTIME DESTINATION bin)
     install(FILES packaging/linux/softethervpn-qtmanager.desktop
         DESTINATION share/applications)
+    foreach(iconsize IN ITEMS 16 32 48 64 128 256 512)
+        install(FILES packaging/icon/hicolor/${iconsize}x${iconsize}/apps/softethervpn-qtmanager.png
+            DESTINATION share/icons/hicolor/${iconsize}x${iconsize}/apps)
+    endforeach()
 
     set(CPACK_PACKAGE_NAME "softethervpn-qtmanager")
     set(CPACK_PACKAGE_VENDOR "SoftEtherVPN-QtManager project")

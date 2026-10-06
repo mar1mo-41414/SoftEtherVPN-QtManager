@@ -44,8 +44,11 @@ cp "$BUILD_DIR/$APP_NAME" "$APPDIR/usr/bin/"
 cp "$ROOT/packaging/linux/softethervpn-qtmanager.desktop" "$APPDIR/usr/share/applications/"
 
 export QML_SOURCES_PATHS="$ROOT/src"
+# qmakeがqtchooser経由でQt5を指している環境があるため、Qt6のqmakeを明示指定する。
+export QMAKE="$(command -v qmake6 || command -v qmake)"
 "$LINUXDEPLOY" --appdir "$APPDIR" \
     --desktop-file "$ROOT/packaging/linux/softethervpn-qtmanager.desktop" \
+    --icon-file "$ROOT/packaging/icon/hicolor/256x256/apps/softethervpn-qtmanager.png" \
     --plugin qt \
     --output appimage
 
