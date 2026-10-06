@@ -5,6 +5,7 @@
 #include <QDialog>
 
 class QCheckBox;
+class QLabel;
 class QComboBox;
 class QLineEdit;
 class QRadioButton;
@@ -31,12 +32,14 @@ private slots:
 
 private:
     void reload();
+    void updateCertInfo();
 
     VpnServerRpc *m_rpc;
     QByteArray m_certDer;
     QByteArray m_keyDer;
     bool m_certChanged = false;
 
+    QLabel *m_certInfoLabel;
     QComboBox *m_cipherCombo;
     QComboBox *m_syslogCombo;
     QLineEdit *m_syslogHostEdit;

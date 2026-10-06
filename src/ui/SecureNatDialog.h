@@ -29,7 +29,6 @@ private:
 
     VpnServerRpc *m_rpc;
     QString m_hubName;
-    QLabel *m_stateLabel;
     QPushButton *m_enableButton;
     QPushButton *m_disableButton;
     QPushButton *m_configButton;

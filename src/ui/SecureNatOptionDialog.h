@@ -8,19 +8,21 @@ class QLineEdit;
 class QSpinBox;
 
 // 公式Manager「SecureNAT の設定」(D_NM_OPTION) 相当。
-// 静的ルーティングテーブルのプッシュ (スプリットトンネリング) は後続フェーズで追加する。
+// 左列: 仮想ホストのNIC・仮想NAT・静的ルートのプッシュ / 右列: 仮想DHCPサーバー。
 class SecureNatOptionDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit SecureNatOptionDialog(QWidget *parent = nullptr);
+    explicit SecureNatOptionDialog(const QString &hubName, QWidget *parent = nullptr);
 
     void setValues(const QJsonObject &option);
     QJsonObject toRpcParams() const;
 
 private slots:
     void accept() override;
+    void updateState();
+    void onEditPushRoutes();
 
 private:
     QLineEdit *m_macEdit;
@@ -32,6 +34,7 @@ private:
     QSpinBox *m_tcpTimeoutSpin;
     QSpinBox *m_udpTimeoutSpin;
     QCheckBox *m_saveLogCheck;
+    QString m_pushRoutes;
 
     QCheckBox *m_useDhcpCheck;
     QLineEdit *m_leaseStartEdit;

@@ -4,6 +4,7 @@
 #include "SpecialListenerDialog.h"
 
 #include "util/RpcUiHelpers.h"
+#include "util/SoftEtherLabels.h"
 
 #include "util/DialogSizing.h"
 
@@ -13,6 +14,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFormLayout>
+#include <QFrame>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QInputDialog>
@@ -21,6 +23,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSslCertificate>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -35,17 +38,26 @@ ServerSettingsDialog::ServerSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
         new QLabel(tr("この VPN Server の暗号化、通信、およびセキュリティに関する設定を参照または変更することができます。"), this);
     introLabel->setWordWrap(true);
 
+    auto note = [this](const QString &text) {
+        auto *label = new QLabel(text, this);
+        label->setWordWrap(true);
+        return label;
+    };
+
     // STATIC2〜4
     m_cipherCombo = new QComboBox(this);
     m_cipherCombo->setEditable(true);
     m_cipherCombo->addItems({QStringLiteral("ECDHE-RSA-AES128-GCM-SHA256"), QStringLiteral("ECDHE-RSA-AES256-GCM-SHA384"),
                               QStringLiteral("AES128-SHA"), QStringLiteral("AES256-SHA"), QStringLiteral("DHE-RSA-AES256-SHA")});
-    auto *cipherForm = new QFormLayout;
-    cipherForm->addRow(tr("暗号化アルゴリズム名(&C):"), m_cipherCombo);
-    auto *cipherGroup = new QGroupBox(tr("使用する暗号化アルゴリズム(&A)"), this);
-    cipherGroup->setLayout(cipherForm);
+    auto *cipherRow = new QHBoxLayout;
+    cipherRow->addWidget(new QLabel(tr("暗号化アルゴリズム名(C):"), this));
+    cipherRow->addWidget(m_cipherCombo, 1);
+    auto *cipherGroup = new QGroupBox(tr("使用する暗号化アルゴリズム(A):"), this);
+    auto *cipherLayout = new QVBoxLayout(cipherGroup);
+    cipherLayout->addWidget(note(tr("この VPN Server に接続した VPN Client との間で使用される SSL に対応した暗号化アルゴリズム名を指定してください。暗号化アルゴリズムは SSL バージョン 3 に対応したものでなければなりません。")));
+    cipherLayout->addLayout(cipherRow);
 
-    // STATIC6/7 + B_IMPORT/B_EXPORT/B_VIEW/B_REGENERATE
+    // STATIC6/7/10 + B_IMPORT/B_EXPORT/B_VIEW/B_REGENERATE
     auto *importButton = new QPushButton(tr("インポート(&I)"), this);
     auto *exportButton = new QPushButton(tr("エクスポート(&X)"), this);
     auto *viewButton = new QPushButton(tr("証明書の表示(&V)"), this);
@@ -55,15 +67,19 @@ ServerSettingsDialog::ServerSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     connect(viewButton, &QPushButton::clicked, this, &ServerSettingsDialog::onViewCert);
     connect(regenerateButton, &QPushButton::clicked, this, &ServerSettingsDialog::onRegenerateCert);
 
+    m_certInfoLabel = new QLabel(this);
+    m_certInfoLabel->setFrameShape(QFrame::StyledPanel);
+    m_certInfoLabel->setMargin(6);
     auto *certButtonLayout = new QHBoxLayout;
+    certButtonLayout->addWidget(regenerateButton);
     certButtonLayout->addWidget(importButton);
     certButtonLayout->addWidget(exportButton);
     certButtonLayout->addWidget(viewButton);
-    certButtonLayout->addWidget(regenerateButton);
-    auto *certGroup = new QGroupBox(tr("サーバー証明書(&E)"), this);
+    auto *certGroup = new QGroupBox(tr("サーバー証明書(E):"), this);
     auto *certGroupLayout = new QVBoxLayout(certGroup);
-    certGroupLayout->addWidget(
-        new QLabel(tr("この VPN Server がクライアントに対して提示する X509 証明書と秘密鍵を指定してください。"), this));
+    certGroupLayout->addWidget(note(tr("この VPN Server がクライアントに対して提示する X509 証明書と秘密鍵を指定してください。")));
+    certGroupLayout->addWidget(new QLabel(tr("サーバー証明書:"), this));
+    certGroupLayout->addWidget(m_certInfoLabel);
     certGroupLayout->addLayout(certButtonLayout);
 
     // STATIC12〜15
@@ -77,13 +93,28 @@ ServerSettingsDialog::ServerSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     m_syslogPortSpin = new QSpinBox(this);
     m_syslogPortSpin->setRange(1, 65535);
     m_syslogPortSpin->setValue(514);
-
     auto *syslogForm = new QFormLayout;
-    syslogForm->addRow(m_syslogCombo);
-    syslogForm->addRow(tr("syslog サーバーホスト名(&S):"), m_syslogHostEdit);
-    syslogForm->addRow(tr("ポート番号(&R):"), m_syslogPortSpin);
+    syslogForm->setLabelAlignment(Qt::AlignRight);
+    syslogForm->addRow(tr("syslog サーバーホスト名(S):"), m_syslogHostEdit);
+    syslogForm->addRow(tr("ポート番号(R):"), m_syslogPortSpin);
     auto *syslogGroup = new QGroupBox(tr("syslog 送信機能"), this);
-    syslogGroup->setLayout(syslogForm);
+    auto *syslogLayout = new QVBoxLayout(syslogGroup);
+    syslogLayout->addWidget(note(tr("VPN サーバー / VPN ブリッジ全体のログ、仮想 HUB の管理ログおよび仮想 HUB のパケットログを、ディスク上のファイルに書き出す代わりに syslog プロトコルで転送することができます。")));
+    syslogLayout->addWidget(m_syslogCombo);
+    syslogLayout->addLayout(syslogForm);
+    connect(m_syslogCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, [this]() {
+        const bool on = m_syslogCombo->currentData().toInt() != 0;
+        m_syslogHostEdit->setEnabled(on);
+        m_syslogPortSpin->setEnabled(on);
+    });
+    m_syslogHostEdit->setEnabled(false);
+    m_syslogPortSpin->setEnabled(false);
+
+    auto *leftColumn = new QVBoxLayout;
+    leftColumn->addWidget(cipherGroup);
+    leftColumn->addWidget(certGroup);
+    leftColumn->addWidget(syslogGroup);
+    leftColumn->addStretch();
 
     // STATIC8〜S_INFO: インターネット接続の維持機能
     m_keepCheck = new QCheckBox(tr("インターネット接続の維持機能を使用する(&K)"), this);
@@ -102,49 +133,80 @@ ServerSettingsDialog::ServerSettingsDialog(VpnServerRpc *rpc, QWidget *parent)
     keepProtocolLayout->addWidget(m_keepTcpRadio);
     keepProtocolLayout->addWidget(m_keepUdpRadio);
     auto *keepForm = new QFormLayout;
-    keepForm->addRow(m_keepCheck);
-    keepForm->addRow(tr("ホスト名(&H):"), m_keepHostEdit);
-    keepForm->addRow(tr("ポート番号(&F):"), m_keepPortSpin);
-    keepForm->addRow(tr("パケット送出間隔(&D):"), m_keepIntervalSpin);
-    keepForm->addRow(tr("プロトコル(&L):"), keepProtocolLayout);
-    auto *keepHint = new QLabel(
-        tr("一定期間無通信状態が続くと接続が自動的に切断されるようなネットワーク接続環境の場合、インターネット上の任意のサーバーに対して"
-           "一定間隔ごとにパケットを送信することにより、インターネット接続を維持することができます。"
-           "送信されるパケットはランダムな内容であり、個人情報などが送信されることはありません。"),
-        this);
-    keepHint->setWordWrap(true);
-    auto *keepGroup = new QGroupBox(tr("インターネット接続の維持機能"), this);
+    keepForm->setLabelAlignment(Qt::AlignRight);
+    keepForm->addRow(tr("ホスト名(H):"), m_keepHostEdit);
+    keepForm->addRow(tr("ポート番号(F):"), m_keepPortSpin);
+    keepForm->addRow(tr("パケット送出間隔(D):"), m_keepIntervalSpin);
+    keepForm->addRow(tr("プロトコル(L):"), keepProtocolLayout);
+    auto *keepGroup = new QGroupBox(tr("インターネット接続の維持機能:"), this);
     auto *keepLayout = new QVBoxLayout(keepGroup);
-    keepLayout->addWidget(keepHint);
+    keepLayout->addWidget(note(tr("一定期間無通信状態が続くと接続が自動的に切断されるようなネットワーク接続環境の場合、インターネット上の任意のサーバーに対して一定間隔ごとにパケットを送信することにより、インターネット接続を維持することができます。")));
+    keepLayout->addWidget(m_keepCheck);
     keepLayout->addLayout(keepForm);
+    keepLayout->addWidget(note(tr("インターネット接続維持のために送信されるパケットはランダムな内容であり、コンピュータやユーザーを識別する個人情報などが送信されることはありません。")));
+    connect(m_keepCheck, &QCheckBox::toggled, this, [this](bool on) {
+        for (QWidget *w : QList<QWidget *>{m_keepHostEdit, m_keepPortSpin, m_keepIntervalSpin, m_keepTcpRadio, m_keepUdpRadio}) {
+            w->setEnabled(on);
+        }
+    });
 
-    // B_PASSWORD / B_SPECIALLISTENER
+    emit m_keepCheck->toggled(false);
+
+    // B_PASSWORD / B_SPECIALLISTENER / B_UPDATE_CONFIG
     auto *passwordButton = new QPushButton(tr("管理者パスワードの変更(&P)"), this);
     auto *specialButton = new QPushButton(tr("VPN over ICMP / DNS 設定"), this);
+    auto *updateButton = new QPushButton(tr("更新通知設定(&U)..."), this);
+    updateButton->setEnabled(false);
+    updateButton->setToolTip(tr("未実装"));
     connect(passwordButton, &QPushButton::clicked, this, &ServerSettingsDialog::onChangePassword);
     connect(specialButton, &QPushButton::clicked, this, &ServerSettingsDialog::onSpecialListener);
-    auto *extraButtons = new QHBoxLayout;
-    extraButtons->addWidget(passwordButton);
-    extraButtons->addWidget(specialButton);
-    extraButtons->addStretch();
+    auto *passwordGroup = new QGroupBox(tr("管理者パスワード(W):"), this);
+    auto *passwordLayout = new QVBoxLayout(passwordGroup);
+    passwordLayout->addWidget(note(tr("この VPN Server 全体とすべての仮想 HUB に対する管理権限を有する管理者パスワードを設定または変更することができます。")));
+    passwordLayout->addWidget(passwordButton, 0, Qt::AlignHCenter);
+    auto *specialGroup = new QGroupBox(tr("VPN over ICMP / DNS サーバー機能"), this);
+    auto *specialLayout = new QVBoxLayout(specialGroup);
+    specialLayout->addWidget(note(tr("ファイアウォールやルータで TCP/IP の通信が遮断されている場合でも、ICMP または DNS パケットのみを用いて VPN を確立できます。")));
+    specialLayout->addWidget(specialButton, 0, Qt::AlignHCenter);
 
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
     buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("キャンセル"));
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ServerSettingsDialog::onOk);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    auto *bottomRow = new QHBoxLayout;
+    bottomRow->addWidget(updateButton);
+    bottomRow->addStretch();
+    bottomRow->addWidget(buttonBox);
 
+    auto *rightColumn = new QVBoxLayout;
+    rightColumn->addWidget(keepGroup);
+    rightColumn->addWidget(passwordGroup);
+    rightColumn->addWidget(specialGroup);
+    rightColumn->addStretch();
+    rightColumn->addLayout(bottomRow);
+
+    auto *columns = new QHBoxLayout;
+    columns->addLayout(leftColumn, 1);
+    columns->addLayout(rightColumn, 1);
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(introLabel);
-    layout->addWidget(cipherGroup);
-    layout->addWidget(certGroup);
-    layout->addWidget(syslogGroup);
-    layout->addWidget(keepGroup);
-    layout->addLayout(extraButtons);
-    layout->addWidget(buttonBox);
+    layout->addLayout(columns, 1);
 
-    DialogSizing::fitToWidth(this, 480);
+    resize(860, 640);
     reload();
+}
+
+void ServerSettingsDialog::updateCertInfo()
+{
+    if (m_certDer.isEmpty()) {
+        m_certInfoLabel->setText(QString());
+        return;
+    }
+    const QSslCertificate cert(m_certDer, QSsl::Der);
+    m_certInfoLabel->setText(tr("発行先: %1\n発行者: %2\n有効期限: %3")
+                                 .arg(cert.subjectDisplayName(), cert.issuerDisplayName(),
+                                      SoftEtherLabels::dateTime(cert.expiryDate().toString(Qt::ISODateWithMs))));
 }
 
 void ServerSettingsDialog::reload()
@@ -160,6 +222,7 @@ void ServerSettingsDialog::reload()
         [this](const QJsonObject &result) {
             m_certDer = QByteArray::fromBase64(result.value("Cert_bin").toString().toUtf8());
             m_keyDer = QByteArray::fromBase64(result.value("Key_bin").toString().toUtf8());
+            updateCertInfo();
         },
         [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
@@ -178,6 +241,7 @@ void ServerSettingsDialog::reload()
             const bool udp = result.value("KeepConnectProtocol_u32").toInt() == 1;
             m_keepUdpRadio->setChecked(udp);
             m_keepTcpRadio->setChecked(!udp);
+            m_keepCheck->toggled(m_keepCheck->isChecked());
         },
         [this](const RpcError &error) { RpcUi::showError(this, tr("インターネット接続維持機能の設定取得"), error); });
 
@@ -220,6 +284,7 @@ void ServerSettingsDialog::onImportCert()
     m_certDer = certFile.readAll();
     m_keyDer = keyFile.readAll();
     m_certChanged = true;
+    updateCertInfo();
     QMessageBox::information(this, tr("情報"), tr("証明書を読み込みました。OK を押すと VPN Server に反映されます。"));
 }
 
