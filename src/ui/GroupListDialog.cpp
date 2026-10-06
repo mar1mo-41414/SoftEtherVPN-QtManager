@@ -1,5 +1,6 @@
 #include "GroupListDialog.h"
 #include "GroupEditDialog.h"
+#include "UserListDialog.h"
 
 #include <QAbstractItemView>
 #include <QHBoxLayout>
@@ -29,30 +30,35 @@ GroupListDialog::GroupListDialog(VpnServerRpc *rpc, QString hubName, QWidget *pa
     // SM_GROUPLIST_NAME/REALNAME/NOTE/NUMUSERS
     m_table->setHorizontalHeaderLabels({tr("グループ名"), tr("本名"), tr("説明"), tr("ユーザー数")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     connect(m_table, &QTableWidget::cellDoubleClicked, this, &GroupListDialog::onEdit);
 
-    // B_CREATE / IDOK(編集) / B_DELETE / B_REFRESH / IDCANCEL
+    // B_CREATE / IDOK(編集) / B_DELETE / B_REFRESH / B_USER / IDCANCEL
     auto *createButton = new QPushButton(tr("新規作成(&C)"), this);
-    auto *editButton = new QPushButton(tr("編集(&E)"), this);
-    auto *deleteButton = new QPushButton(tr("削除(&D)"), this);
+    m_editButton = new QPushButton(tr("編集(&E)"), this);
+    m_deleteButton = new QPushButton(tr("削除(&D)"), this);
     auto *refreshButton = new QPushButton(tr("最新の状態に更新(&R)"), this);
+    m_memberButton = new QPushButton(tr("メンバ一覧(&M)"), this);
     auto *closeButton = new QPushButton(tr("閉じる(&X)"), this);
 
     connect(createButton, &QPushButton::clicked, this, &GroupListDialog::onCreate);
-    connect(editButton, &QPushButton::clicked, this, &GroupListDialog::onEdit);
-    connect(deleteButton, &QPushButton::clicked, this, &GroupListDialog::onDelete);
+    connect(m_editButton, &QPushButton::clicked, this, &GroupListDialog::onEdit);
+    connect(m_deleteButton, &QPushButton::clicked, this, &GroupListDialog::onDelete);
     connect(refreshButton, &QPushButton::clicked, this, &GroupListDialog::reload);
+    connect(m_memberButton, &QPushButton::clicked, this, &GroupListDialog::onMembers);
     connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
+    connect(m_table, &QTableWidget::itemSelectionChanged, this, &GroupListDialog::updateButtons);
 
     auto *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(createButton);
-    buttonLayout->addWidget(editButton);
-    buttonLayout->addWidget(deleteButton);
+    buttonLayout->addWidget(m_editButton);
+    buttonLayout->addWidget(m_deleteButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(refreshButton);
+    buttonLayout->addWidget(m_memberButton);
     buttonLayout->addWidget(closeButton);
 
     auto *layout = new QVBoxLayout(this);
@@ -60,8 +66,27 @@ GroupListDialog::GroupListDialog(VpnServerRpc *rpc, QString hubName, QWidget *pa
     layout->addWidget(m_table);
     layout->addLayout(buttonLayout);
 
-    resize(560, 400);
+    resize(720, 440);
+    updateButtons();
     reload();
+}
+
+void GroupListDialog::updateButtons()
+{
+    const bool selected = !m_table->selectedItems().isEmpty();
+    m_editButton->setEnabled(selected);
+    m_deleteButton->setEnabled(selected);
+    m_memberButton->setEnabled(selected);
+}
+
+void GroupListDialog::onMembers()
+{
+    const QString groupName = selectedGroupName();
+    if (groupName.isEmpty()) {
+        return;
+    }
+    UserListDialog dialog(m_rpc, m_hubName, this, groupName);
+    dialog.exec();
 }
 
 QString GroupListDialog::selectedGroupName() const
@@ -88,6 +113,10 @@ void GroupListDialog::reload()
                 m_table->setItem(row, 3, new QTableWidgetItem(QString::number(group.value("NumUsers_u32").toInt())));
             }
             m_table->resizeColumnsToContents();
+            for (int column = 0; column < m_table->columnCount(); ++column) {
+                m_table->setColumnWidth(column, qMax(m_table->columnWidth(column), 110));
+            }
+            updateButtons();
         },
         [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
@@ -124,8 +153,7 @@ void GroupListDialog::onEdit()
         [this](const QJsonObject &group) {
             auto *dialog = new GroupEditDialog(/*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
-            dialog->setValues(group.value("Name_str").toString(), group.value("Realname_utf").toString(),
-                               group.value("Note_utf").toString());
+            dialog->setGroup(group);
             connect(dialog, &QDialog::accepted, this, [this, dialog]() {
                 QJsonObject params = dialog->toRpcParams();
                 params["HubName_str"] = m_hubName;

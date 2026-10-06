@@ -108,6 +108,7 @@ HubManagementPage::HubManagementPage(QWidget *parent)
 
     // 右列 1: この仮想 HUB の現在の状況(R)
     m_statusTable = InfoTable::makeTable(this);
+    m_statusTable->setMinimumHeight(190);
     auto *refreshButton = new QPushButton(tr("最新の状態に更新(&H)"), this);
     connect(refreshButton, &QPushButton::clicked, this, &HubManagementPage::refreshStatus);
     auto *statusGroup = new QGroupBox(tr("この仮想 HUB の現在の状況(&R):"), this);

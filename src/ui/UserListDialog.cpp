@@ -1,9 +1,11 @@
 #include "UserListDialog.h"
+#include "InfoTableDialog.h"
 #include "UserEditDialog.h"
 
 #include "util/SoftEtherLabels.h"
 
 #include <QAbstractItemView>
+#include <QDateTime>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QJsonArray>
@@ -14,45 +16,55 @@
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
 
-UserListDialog::UserListDialog(VpnServerRpc *rpc, QString hubName, QWidget *parent)
+UserListDialog::UserListDialog(VpnServerRpc *rpc, QString hubName, QWidget *parent, QString groupFilter)
     : QDialog(parent)
     , m_rpc(rpc)
     , m_hubName(std::move(hubName))
+    , m_groupFilter(std::move(groupFilter))
 {
     // D_SM_USER CAPTION
-    setWindowTitle(tr("ユーザーの管理"));
+    setWindowTitle(m_groupFilter.isEmpty()
+                       ? tr("ユーザーの管理")
+                       // SM_GROUP_MEMBER_STR
+                       : tr("ユーザーの管理 (グループ %1 に所属しているユーザーのみ表示)").arg(m_groupFilter));
 
     // S_TITLE
     auto *titleLabel = new QLabel(tr("仮想 HUB \"%1\" に登録されているユーザーは以下の通りです。").arg(m_hubName), this);
     titleLabel->setWordWrap(true);
 
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(6);
-    m_table->setHorizontalHeaderLabels(
-        {tr("ユーザー名"), tr("グループ名"), tr("本名"), tr("説明"), tr("認証方法"), tr("ログイン回数")});
+    m_table->setColumnCount(7);
+    // SM_USER_COLUMN_1〜7
+    m_table->setHorizontalHeaderLabels({tr("ユーザー名"), tr("本名"), tr("所属グループ"), tr("説明"), tr("認証方法"),
+                                         tr("ログイン回数"), tr("最終ログイン日時")});
     m_table->horizontalHeader()->setStretchLastSection(true);
+    m_table->verticalHeader()->hide();
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     connect(m_table, &QTableWidget::cellDoubleClicked, this, &UserListDialog::onEdit);
 
-    // IDOK(編集) / B_CREATE / B_DELETE / B_REFRESH / IDCANCEL
-    auto *editButton = new QPushButton(tr("編集(&E)"), this);
+    // B_CREATE / IDOK(編集) / B_STATUS / B_DELETE / B_REFRESH / IDCANCEL
     auto *createButton = new QPushButton(tr("新規作成(&C)"), this);
-    auto *deleteButton = new QPushButton(tr("削除(&D)"), this);
+    m_editButton = new QPushButton(tr("編集(&E)"), this);
+    m_statusButton = new QPushButton(tr("ユーザー情報表示(&V)"), this);
+    m_deleteButton = new QPushButton(tr("削除(&D)"), this);
     auto *refreshButton = new QPushButton(tr("最新の状態に更新(&R)"), this);
     auto *closeButton = new QPushButton(tr("閉じる(&X)"), this);
 
     connect(createButton, &QPushButton::clicked, this, &UserListDialog::onCreate);
-    connect(editButton, &QPushButton::clicked, this, &UserListDialog::onEdit);
-    connect(deleteButton, &QPushButton::clicked, this, &UserListDialog::onDelete);
+    connect(m_editButton, &QPushButton::clicked, this, &UserListDialog::onEdit);
+    connect(m_statusButton, &QPushButton::clicked, this, &UserListDialog::onStatus);
+    connect(m_deleteButton, &QPushButton::clicked, this, &UserListDialog::onDelete);
     connect(refreshButton, &QPushButton::clicked, this, &UserListDialog::reload);
     connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
+    connect(m_table, &QTableWidget::itemSelectionChanged, this, &UserListDialog::updateButtons);
 
     auto *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(createButton);
-    buttonLayout->addWidget(editButton);
-    buttonLayout->addWidget(deleteButton);
+    buttonLayout->addWidget(m_editButton);
+    buttonLayout->addWidget(m_statusButton);
+    buttonLayout->addWidget(m_deleteButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(refreshButton);
     buttonLayout->addWidget(closeButton);
@@ -62,8 +74,17 @@ UserListDialog::UserListDialog(VpnServerRpc *rpc, QString hubName, QWidget *pare
     layout->addWidget(m_table);
     layout->addLayout(buttonLayout);
 
-    resize(680, 420);
+    resize(820, 480);
+    updateButtons();
     reload();
+}
+
+void UserListDialog::updateButtons()
+{
+    const bool selected = !m_table->selectedItems().isEmpty();
+    m_editButton->setEnabled(selected);
+    m_statusButton->setEnabled(selected);
+    m_deleteButton->setEnabled(selected);
 }
 
 QString UserListDialog::selectedUserName() const
@@ -80,19 +101,36 @@ void UserListDialog::reload()
     m_rpc->enumUser(
         m_hubName,
         [this](const QJsonObject &result) {
-            const QJsonArray userList = result.value("UserList").toArray();
+            QJsonArray userList = result.value("UserList").toArray();
+            if (!m_groupFilter.isEmpty()) {
+                QJsonArray filtered;
+                for (const QJsonValue &value : userList) {
+                    if (value.toObject().value("GroupName_str").toString() == m_groupFilter) {
+                        filtered.append(value);
+                    }
+                }
+                userList = filtered;
+            }
             m_table->setRowCount(userList.size());
             for (int row = 0; row < userList.size(); ++row) {
                 const QJsonObject user = userList.at(row).toObject();
+                const QString group = user.value("GroupName_str").toString();
                 m_table->setItem(row, 0, new QTableWidgetItem(user.value("Name_str").toString()));
-                m_table->setItem(row, 1, new QTableWidgetItem(user.value("GroupName_str").toString()));
-                m_table->setItem(row, 2, new QTableWidgetItem(user.value("Realname_utf").toString()));
+                m_table->setItem(row, 1, new QTableWidgetItem(user.value("Realname_utf").toString()));
+                // SM_NO_GROUP
+                m_table->setItem(row, 2, new QTableWidgetItem(group.isEmpty() ? tr("－") : group));
                 m_table->setItem(row, 3, new QTableWidgetItem(user.value("Note_utf").toString()));
                 m_table->setItem(row, 4,
                                   new QTableWidgetItem(SoftEtherLabels::authType(user.value("AuthType_u32").toInt())));
                 m_table->setItem(row, 5, new QTableWidgetItem(QString::number(user.value("NumLogin_u32").toInt())));
+                m_table->setItem(row, 6,
+                                  new QTableWidgetItem(SoftEtherLabels::dateTime(user.value("LastLoginTime_dt").toString())));
             }
             m_table->resizeColumnsToContents();
+            for (int column = 0; column < m_table->columnCount(); ++column) {
+                m_table->setColumnWidth(column, qMax(m_table->columnWidth(column), 110));
+            }
+            updateButtons();
         },
         [this](const RpcError &error) {
             QMessageBox::warning(this, tr("エラー"),
@@ -102,7 +140,7 @@ void UserListDialog::reload()
 
 void UserListDialog::onCreate()
 {
-    UserEditDialog dialog(/*isNew=*/true, this);
+    UserEditDialog dialog(m_rpc, m_hubName, /*isNew=*/true, this);
     if (dialog.exec() != QDialog::Accepted) {
         return;
     }
@@ -127,10 +165,9 @@ void UserListDialog::onEdit()
     m_rpc->getUser(
         m_hubName, userName,
         [this](const QJsonObject &user) {
-            auto *dialog = new UserEditDialog(/*isNew=*/false, this);
+            auto *dialog = new UserEditDialog(m_rpc, m_hubName, /*isNew=*/false, this);
             dialog->setAttribute(Qt::WA_DeleteOnClose);
-            dialog->setValues(user.value("Name_str").toString(), user.value("GroupName_str").toString(),
-                               user.value("Realname_utf").toString(), user.value("Note_utf").toString());
+            dialog->setUser(user);
             connect(dialog, &QDialog::accepted, this, [this, dialog]() {
                 QJsonObject params = dialog->toRpcParams();
                 params["HubName_str"] = m_hubName;
@@ -174,4 +211,61 @@ void UserListDialog::onDelete()
             QMessageBox::warning(this, tr("エラー"),
                                   tr("ユーザーの削除に失敗しました: %1 (code %2)").arg(error.message).arg(error.code));
         });
+}
+
+void UserListDialog::onStatus()
+{
+    const QString userName = selectedUserName();
+    if (userName.isEmpty()) {
+        return;
+    }
+    using SoftEtherLabels::bytes;
+    using SoftEtherLabels::packets;
+
+    VpnServerRpc *rpc = m_rpc;
+    const QString hubName = m_hubName;
+    // SM_USERINFO_CAPTION
+    auto *dialog = new InfoTableDialog(
+        tr("ユーザー \"%1\" の情報").arg(userName), tr("ユーザー \"%1\" の情報").arg(userName), /*refreshable=*/true,
+        [rpc, hubName, userName](const InfoTableDialog::Deliver &deliver, const InfoTableDialog::Fail &fail) {
+            rpc->getUser(
+                hubName, userName,
+                [deliver](const QJsonObject &u) {
+                    InfoTable::Rows rows;
+                    rows << qMakePair(tr("ユーザー名"), u.value("Name_str").toString());
+                    if (!u.value("Realname_utf").toString().isEmpty()) {
+                        rows << qMakePair(tr("本名"), u.value("Realname_utf").toString());
+                    }
+                    if (!u.value("Note_utf").toString().isEmpty()) {
+                        rows << qMakePair(tr("説明"), u.value("Note_utf").toString());
+                    }
+                    if (!u.value("GroupName_str").toString().isEmpty()) {
+                        rows << qMakePair(tr("グループ名"), u.value("GroupName_str").toString());
+                    }
+                    rows << qMakePair(tr("作成日時"), SoftEtherLabels::dateTime(u.value("CreatedTime_dt").toString()));
+                    rows << qMakePair(tr("更新日時"), SoftEtherLabels::dateTime(u.value("UpdatedTime_dt").toString()));
+                    const QDateTime expire = QDateTime::fromString(u.value("ExpireTime_dt").toString(), Qt::ISODateWithMs);
+                    if (expire.isValid() && expire.date().year() > 1971) {
+                        rows << qMakePair(tr("有効期限"), SoftEtherLabels::dateTime(u.value("ExpireTime_dt").toString()));
+                    }
+                    rows << qMakePair(tr("送信ユニキャストパケット数"), packets(u.value("Send.UnicastCount_u64").toDouble()));
+                    rows << qMakePair(tr("送信ユニキャスト合計サイズ"), bytes(u.value("Send.UnicastBytes_u64").toDouble()));
+                    rows << qMakePair(tr("送信ブロードキャストパケット数"),
+                                      packets(u.value("Send.BroadcastCount_u64").toDouble()));
+                    rows << qMakePair(tr("送信ブロードキャスト合計サイズ"),
+                                      bytes(u.value("Send.BroadcastBytes_u64").toDouble()));
+                    rows << qMakePair(tr("受信ユニキャストパケット数"), packets(u.value("Recv.UnicastCount_u64").toDouble()));
+                    rows << qMakePair(tr("受信ユニキャスト合計サイズ"), bytes(u.value("Recv.UnicastBytes_u64").toDouble()));
+                    rows << qMakePair(tr("受信ブロードキャストパケット数"),
+                                      packets(u.value("Recv.BroadcastCount_u64").toDouble()));
+                    rows << qMakePair(tr("受信ブロードキャスト合計サイズ"),
+                                      bytes(u.value("Recv.BroadcastBytes_u64").toDouble()));
+                    rows << qMakePair(tr("ログイン回数"), QString::number(u.value("NumLogin_u32").toInt()));
+                    deliver(rows);
+                },
+                [fail](const RpcError &error) { fail(error); });
+        },
+        this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->open();
 }

@@ -1,36 +1,81 @@
 #pragma once
 
+#include "rpc/VpnServerRpc.h"
+
+#include <QByteArray>
 #include <QDialog>
 #include <QJsonObject>
 
+class QCheckBox;
+class QDateEdit;
+class QGroupBox;
 class QLineEdit;
-class QTextEdit;
+class QListWidget;
+class QPushButton;
+class QTimeEdit;
 
 // 公式Manager「ユーザーの新規作成/編集」(D_SM_EDIT_USER) 相当。
-// このフェーズではパスワード認証のみサポートする。証明書認証・RADIUS/NT認証・
-// 有効期限・セキュリティポリシーは後続フェーズで追加する。
+// 認証方法 (匿名/パスワード/固有証明書/署名済み証明書/RADIUS/NTドメイン)・有効期限・
+// グループ・セキュリティポリシーを扱う。rpc は「グループの参照」でのみ使う (借用)。
 class UserEditDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit UserEditDialog(bool isNew, QWidget *parent = nullptr);
+    UserEditDialog(VpnServerRpc *rpc, const QString &hubName, bool isNew, QWidget *parent = nullptr);
 
-    void setValues(const QString &name, const QString &groupName, const QString &realname, const QString &note);
+    // GetUser の結果をフォームに反映する (編集時)。
+    void setUser(const QJsonObject &user);
 
-    // 新規作成時は必ずAuthType_u32=1(パスワード認証)を含める。
-    // 編集時、パスワード欄が空ならAuth_Password_strは空文字列のまま送る
-    // (SetHubのパスワードと同様、「変更しない」を意味する)。
+    // CreateUser / SetUser にそのまま渡せる JSON (HubName_str は含まない)。
     QJsonObject toRpcParams() const;
 
 private slots:
     void accept() override;
+    void updateState();
+    void onSelectGroup();
+    void onPolicy();
+    void onLoadCert();
+    void onViewCert();
 
 private:
+    int authType() const;
+
+    VpnServerRpc *m_rpc;
+    QString m_hubName;
+    bool m_isNew;
+
     QLineEdit *m_nameEdit;
-    QLineEdit *m_groupNameEdit;
     QLineEdit *m_realnameEdit;
-    QTextEdit *m_noteEdit;
+    QLineEdit *m_noteEdit;
+    QLineEdit *m_groupEdit;
+    QCheckBox *m_expireCheck;
+    QDateEdit *m_expireDate;
+    QTimeEdit *m_expireTime;
+    QListWidget *m_authList;
+
+    QCheckBox *m_policyCheck;
+    QPushButton *m_policyButton;
+    QJsonObject m_policy;
+
+    QGroupBox *m_passwordGroup;
     QLineEdit *m_passwordEdit;
     QLineEdit *m_passwordConfirmEdit;
+    QString m_originalPassword;
+
+    QGroupBox *m_userCertGroup;
+    QPushButton *m_viewCertButton;
+    QByteArray m_certDer;
+
+    QGroupBox *m_rootCertGroup;
+    QCheckBox *m_cnCheck;
+    QLineEdit *m_cnEdit;
+    QCheckBox *m_serialCheck;
+    QLineEdit *m_serialEdit;
+
+    QGroupBox *m_radiusGroup;
+    QCheckBox *m_radiusNameCheck;
+    QLineEdit *m_radiusNameEdit;
+
+    QPushButton *m_okButton;
 };

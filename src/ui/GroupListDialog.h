@@ -4,6 +4,7 @@
 
 #include <QDialog>
 
+class QPushButton;
 class QTableWidget;
 
 // 公式Manager「グループの管理」(D_SM_GROUP) 相当。
@@ -19,6 +20,8 @@ private slots:
     void onCreate();
     void onEdit();
     void onDelete();
+    void onMembers();
+    void updateButtons();
 
 private:
     void reload();
@@ -27,4 +30,7 @@ private:
     VpnServerRpc *m_rpc;
     QString m_hubName;
     QTableWidget *m_table;
+    QPushButton *m_editButton;
+    QPushButton *m_deleteButton;
+    QPushButton *m_memberButton;
 };
