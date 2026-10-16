@@ -38,6 +38,15 @@ cmake -S . -B build
 cmake --build build
 ```
 
+Ubuntu/Debian系の場合、`brew`の代わりに以下で必要なパッケージが揃います:
+
+```bash
+sudo apt install -y qt6-base-dev qt6-base-dev-tools qt6-l10n-tools qt6-tools-dev libxkbcommon-dev
+```
+
+(`qt6-l10n-tools`だけだと`Qt6LinguistTools`のCMake設定が無く`cmake`の段階で失敗します。
+`qt6-tools-dev`も合わせて必要です。)
+
 ビルドしたアプリは `build/SoftEtherVPN-QtManager`（macOSは `.app` バンドル）です。
 
 配布用パッケージ（macOS `.app`/zip、Linux `.deb`・AppImage）の作り方は

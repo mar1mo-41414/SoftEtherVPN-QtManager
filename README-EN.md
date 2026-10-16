@@ -38,6 +38,15 @@ cmake -S . -B build
 cmake --build build
 ```
 
+On Ubuntu/Debian, instead of `brew`, this gets you everything you need:
+
+```bash
+sudo apt install -y qt6-base-dev qt6-base-dev-tools qt6-l10n-tools qt6-tools-dev libxkbcommon-dev
+```
+
+(`qt6-l10n-tools` alone is not enough — it doesn't ship the `Qt6LinguistTools` CMake config,
+so `cmake` fails at the configure step without `qt6-tools-dev` too.)
+
 The built app is `build/SoftEtherVPN-QtManager` (a `.app` bundle on macOS).
 
 For building distributable packages (macOS `.app`/zip, Linux `.deb`/AppImage), see
