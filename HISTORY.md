@@ -286,3 +286,14 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
 - `char[]`系フィールド(ホスト名・HUB名等)は公式側がWindowsのANSI関数で読み書きしている
   ため、UTF-8として不正な場合はLatin-1にフォールバックする実装とした(接続設定名自体は
   `wchar_t`でUnicode正しく保存されているため対象外)。
+
+## 2026-10-30 win-settings-importの.regパース不具合を修正、実機2台で検証
+
+- 実際のWindows機(p_win11)と、別PCで手動エクスポートした.regファイルの両方で
+  `win-settings-import`を試したところ、どちらも「接続設定が見つかりません」になる
+  不具合を発見。原因は、regedit/reg.exeが実際に出力するREG_BINARYの既定表記が
+  `hex(3):`ではなく素の`hex:`だったため(`hex(3):`は明示形式で、実際にはほぼ出現しない)。
+  パーサーの正規表現を両方受け付けるよう修正。
+- 修正後、p_win11 (`HKCU\Software\SoftEther Corporation\PacketiX VPN\Server Manager\Settings`、
+  旧形式キー) から2件、手動エクスポートされた別の.regファイルから8件、
+  いずれも接続設定名(日本語含む)・ホスト・ポートが正しくデコードされることを確認。

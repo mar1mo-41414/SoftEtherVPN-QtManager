@@ -169,8 +169,10 @@ QList<QByteArray> extractSettingBlobs(const QString &text)
     static const QRegularExpression sectionRe(
         QStringLiteral(R"(^\[HKEY_CURRENT_USER\\Software\\SoftEther(?: VPN Developer Edition\\SoftEther VPN|\s*Corporation\\PacketiX VPN)\\Server Manager\\Settings\]\s*$)"),
         QRegularExpression::CaseInsensitiveOption);
+    // REG_BINARY は .reg 上で素の "hex:" (既定・regedit/reg.exeがこちらを書く) と、
+    // 明示的な "hex(3):" のどちらでも現れ得る。両方受け付ける。
     static const QRegularExpression valueStartRe(
-        QStringLiteral(R"(^"Setting\d+"\s*=\s*hex\(3\):(.*)$)"));
+        QStringLiteral(R"(^"Setting\d+"\s*=\s*hex(?:\(3\))?:(.*)$)"));
 
     const QStringList rawLines = text.split(QRegularExpression(QStringLiteral("\r\n|\n|\r")));
 
