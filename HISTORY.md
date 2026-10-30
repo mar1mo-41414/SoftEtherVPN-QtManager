@@ -263,3 +263,26 @@ Windows 11 の仮想マシン (RDP接続) で公式の「SoftEther VPN サーバ
   無いため引き続き未署名(ad-hoc)だが、これで起動時のクラッシュは解消する。
 - 修正後のビルドで実機起動確認(Apple Silicon・p_mac Intelとも)のうえ、
   v0.1.0 Releaseの`SoftEtherVPN-QtManager-macos-arm64.zip`/`-x86_64.zip`を差し替え。
+
+## 2026-10-30 win-settings-import (Windows公式Manager設定の取り込みツール)を追加
+
+- 公式VPN Server Managerの接続設定一覧(Windowsレジストリ
+  `HKCU\Software\SoftEther VPN Developer Edition\SoftEther VPN\Server Manager\Settings`に
+  1件13420バイト固定の生`SETTING`構造体として保存)を、本アプリの`ConnectionProfileStore`
+  (QSettings)へ変換して取り込むCUI専用の別バイナリ`tools/win-settings-import/`を追加。
+  GUI本体とは別実行ファイルで、GUIは一切起動しない (Qt6::Coreのみ依存)。
+- SoftEtherVPN公式ソース(`src/Cedar/SM.c`/`SMInner.h`/`Connection.h`)を参照して
+  `SETTING`/`CLIENT_OPTION`構造体の正確なバイトオフセットを手計算で導出し検証
+  (合計13420バイトというソースコード上のコメントと一致することで整合性を確認)。
+- **重要な制約が判明:** 管理パスワードは公式Manager側が平文でも復号可能な形でもなく、
+  SHA-0の一方向ハッシュ(`HashedPassword[20]`)としてのみ保存しており、公式Manager自身も
+  これを復号して表示できない。そのため本ツールも管理パスワードは常に「要再入力」として
+  取り込む。一方、プロキシ認証パスワード(`ProxyPassword`)は平文保存のため正しく移行できる。
+- 動作検証: Python で `SETTING` 構造体を手組みした合成`.reg`ファイルを作成し、
+  `--dry-run`でのデコード結果、および実際の保存結果(日本語を含む接続設定名のUnicode
+  デコード、仮想HUB管理モード判定の反転ロジック、HUB名、プロキシ一式、パスワード
+  再入力扱い)をすべて確認。検証時に一時的に実際の設定ファイルへテストエントリが
+  混入したが、検証後に`plistlib`で該当エントリのみ除去し元の4件の状態に復元済み。
+- `char[]`系フィールド(ホスト名・HUB名等)は公式側がWindowsのANSI関数で読み書きしている
+  ため、UTF-8として不正な場合はLatin-1にフォールバックする実装とした(接続設定名自体は
+  `wchar_t`でUnicode正しく保存されているため対象外)。

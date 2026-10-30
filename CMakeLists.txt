@@ -179,10 +179,24 @@ qt_add_translations(SoftEtherVPN-QtManager
     LUPDATE_SOURCE_TARGETS SoftEtherVPN-QtManager
 )
 
+# win-settings-import: 公式 VPN Server Manager (Windows) の接続設定一覧(.regエクスポート)を
+# このアプリの設定ストアへ取り込むCUIミニツール。GUI本体とは別バイナリ、GUIは起動しない
+# ため Qt6::Widgets は不要で Qt6::Core のみに依存する。詳細は tools/win-settings-import/main.cpp
+# 冒頭のコメント参照。
+qt_add_executable(win-settings-import
+    tools/win-settings-import/main.cpp
+    src/model/ConnectionProfile.h
+    src/model/ConnectionProfileStore.h
+    src/model/ConnectionProfileStore.cpp
+)
+target_include_directories(win-settings-import PRIVATE src)
+target_link_libraries(win-settings-import PRIVATE Qt6::Core)
+
 # パッケージング (Linux .deb): `cmake --build build --target package` または
 # `cpack` で生成。詳細は docs/PACKAGING.md 参照。macOS/Windowsではこのブロックは無効。
 if(UNIX AND NOT APPLE)
     install(TARGETS SoftEtherVPN-QtManager RUNTIME DESTINATION bin)
+    install(TARGETS win-settings-import RUNTIME DESTINATION bin)
     install(FILES packaging/linux/softethervpn-qtmanager.desktop
         DESTINATION share/applications)
     foreach(iconsize IN ITEMS 16 32 48 64 128 256 512)

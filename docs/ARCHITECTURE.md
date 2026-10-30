@@ -43,3 +43,12 @@
 - `tools/mock_vpnserver.py` : 架空データのモックサーバー (レイアウト確認用、書き込みは何もしない)。
 - 実サーバーでの確認は、副作用が小さい操作から行うこと (テスト専用サーバー推奨)。
 - GUI の見た目は、Windows 版公式 Manager を開いて同じ画面と見比べて合わせている。
+
+## 関連ツール: win-settings-import
+
+公式 VPN Server Manager の接続設定 (`SETTING` 構造体、`src/Cedar/SMInner.h`/`Connection.h`) は
+Windows レジストリに13420バイト固定の生C構造体として保存されている。`tools/win-settings-import/`
+はそれを `.reg` エクスポート経由で読み取り、このアプリの `ConnectionProfileStore` (QSettings) へ
+変換するCUI専用の別バイナリ。管理パスワードは公式側がSHA-0ハッシュでしか保存しておらず
+復元不能なため、常に「要再入力」として取り込む(プロキシ認証パスワードは平文保存のため
+正しく移行できる)。詳細・使い方は [tools/README.md](../tools/README.md) 参照。
